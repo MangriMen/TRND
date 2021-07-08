@@ -1,1 +1,0 @@
-D:\Projects\PyCharm\TRND\venv\Scripts\pyinstaller.exe TRND.spec --noconfirm --clean --upx-dir="D:\Projects\PyCharm\TRND\venv\upx"
