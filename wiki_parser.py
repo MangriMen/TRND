@@ -236,9 +236,6 @@ def get_data_from_site(main):
     elif main.type == 'mods':
         wp_dict['modsLastUpdate'] = now_date
 
-    print("WP" + wp_dict['weaponsLastUpdate'].__str__())
-    print("MD" + wp_dict['modsLastUpdate'].__str__())
-
     return wp_dict
 
 
