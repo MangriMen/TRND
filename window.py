@@ -2,10 +2,11 @@ import os
 import random
 import datetime
 
+import requests
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox
 from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal
-from PyQt5.Qt import QStandardItemModel, QStandardItem
+from PyQt5.Qt import QStandardItemModel, QStandardItem, QDesktopServices, QUrl
 from PyQt5.QtGui import QFont, QColor
 from qt_material import QtStyleTools
 
@@ -85,6 +86,23 @@ class MyWindow(QMainWindow, QtStyleTools):
 
         self.twRandom.collapsed.connect(lambda: self.twRandom.resizeColumnToContents(0))
         self.twRandom.expanded.connect(lambda: self.twRandom.resizeColumnToContents(0))
+
+        self.btnCheckNewVersion.clicked.connect(self.CheckNewVersion)
+
+        self.lblVersion.setText(os.environ.get('VERSION_NOW'))
+
+        self.btnGithubLink.clicked.connect(lambda: QDesktopServices.openUrl(QUrl('https://github.com/MangriMen/TRND'
+                                                                                 '/releases')))
+
+        self.CheckNewVersion()
+
+    def CheckNewVersion(self):
+        response = requests.get("https://api.github.com/repos/MangriMen/TRND/releases/latest").json()
+        if ('message' not in response) or (response['message'] != 'Not Found'):
+            self.lblLatestVersion.setText(response["name"])
+            self.teUpdateChangeList.setText(response['body'])
+        else:
+            self.lblLatestVersion.setText('не найдена')
 
     def ImportJson(self):
         pathToJson = QFileDialog().getOpenFileName(self, 'Import JSON', '/', "json(*.json);; all(*.*)")[0]
