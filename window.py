@@ -66,6 +66,7 @@ class MyWindow(QMainWindow, QtStyleTools):
         self.thread = None
         self.worker = None
         self.JsonData = None
+        self.isThreadRunning = False
 
         self.TreeModel = JsonModel()
         self.UpdateJson()
@@ -220,12 +221,13 @@ class MyWindow(QMainWindow, QtStyleTools):
             self.progressTotal.setValue(0)
             self.lblProgress.setText("")
             self.UpdateJson()
+            self.isThreadRunning = False
 
         def stop(self):
             self.isRunning = False
 
     def UpdateData(self, type_):
-        if (self.thread is not None) and self.thread.isRunning():
+        if self.isThreadRunning:
             self.worker.stop()
             self.worker.finished.emit()
             self.thread.quit()
@@ -249,6 +251,7 @@ class MyWindow(QMainWindow, QtStyleTools):
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
         self.thread.start()
+        self.isThreadRunning = True
 
         if type_ == 'weapons':
             self.btnUpdateWeapons.setText("Cancel")
