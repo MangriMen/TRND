@@ -5,7 +5,7 @@ import datetime
 import requests
 from PyQt5 import uic
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox
-from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal
+from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal, QTimer
 from PyQt5.Qt import QStandardItemModel, QStandardItem, QDesktopServices, QUrl
 from PyQt5.QtGui import QFont, QColor
 from qt_material import QtStyleTools
@@ -67,6 +67,7 @@ class MyWindow(QMainWindow, QtStyleTools):
         self.worker = None
         self.JsonData = None
         self.isThreadRunning = False
+        self.isUpdateQuestion = True
 
         self.TreeModel = JsonModel()
         self.UpdateJson()
@@ -88,7 +89,7 @@ class MyWindow(QMainWindow, QtStyleTools):
         self.twRandom.collapsed.connect(lambda: self.twRandom.resizeColumnToContents(0))
         self.twRandom.expanded.connect(lambda: self.twRandom.resizeColumnToContents(0))
 
-        self.btnCheckNewVersion.clicked.connect(self.CheckNewVersion)
+        self.btnCheckNewVersion.clicked.connect(lambda : self.CheckNewVersion('button'))
 
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
@@ -97,11 +98,24 @@ class MyWindow(QMainWindow, QtStyleTools):
 
         self.CheckNewVersion()
 
-    def CheckNewVersion(self):
+        self.updateTimer = QTimer()
+        self.updateTimer.start(300000)
+        self.updateTimer.timeout.connect(self.CheckNewVersion)
+
+    def CheckNewVersion(self, sender='timer'):
         response = requests.get("https://api.github.com/repos/MangriMen/TRND/releases/latest").json()
         if ('message' not in response) or (response['message'] != 'Not Found'):
             self.lblLatestVersion.setText(response["name"])
             self.teUpdateChangeList.setText(response['body'])
+            if sender == 'timer':
+                if (float(response['name']) > float(os.environ.get('VERSION_NOW'))) and self.isUpdateQuestion:
+                    res = QMessageBox.question(self, 'Новая версия', 'Доступна новая версия. Перейти к странице '
+                                                                     'обновления?',
+                                               (QMessageBox.Ok | QMessageBox.Cancel))
+                    if res == QMessageBox.Ok:
+                        self.tabWidgetMain.setCurrentIndex(2)
+                    elif res == QMessageBox.Cancel:
+                        self.isUpdateQuestion = False
         else:
             self.lblLatestVersion.setText('не найдена')
 
