@@ -134,3 +134,7 @@ dmypy.json
 
 # Build
 build.bat
+
+# Setup
+setup/
+setup_script.iss
