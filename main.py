@@ -22,7 +22,7 @@ def init_environ():
         os.environ['DATAFILE'] = os.environ.get('USERPROFILE') + '\\.trnd\\data.json'
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
-    os.environ['VERSION_NOW'] = '0.11'
+    os.environ['VERSION_NOW'] = '0.12'
 
 
 def suppress_qt_warnings():
