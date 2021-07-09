@@ -1,10 +1,14 @@
 import os
 import random
 import datetime
+import re
+import subprocess
+import sys
+import tempfile
 
 import requests
 from PyQt5 import uic
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel
 from PyQt5.QtCore import QObject, Qt, QThread, pyqtSignal, QTimer
 from PyQt5.Qt import QStandardItemModel, QStandardItem, QDesktopServices, QUrl
 from PyQt5.QtGui import QFont, QColor
@@ -89,7 +93,8 @@ class MyWindow(QMainWindow, QtStyleTools):
         self.twRandom.collapsed.connect(lambda: self.twRandom.resizeColumnToContents(0))
         self.twRandom.expanded.connect(lambda: self.twRandom.resizeColumnToContents(0))
 
-        self.btnCheckNewVersion.clicked.connect(lambda : self.CheckNewVersion('button'))
+        self.btnCheckNewVersion.clicked.connect(lambda: self.CheckNewVersion('button'))
+        self.btnSelfUpdate.clicked.connect(self.SelfUpdate)
 
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
@@ -104,20 +109,111 @@ class MyWindow(QMainWindow, QtStyleTools):
 
     def CheckNewVersion(self, sender='timer'):
         response = requests.get("https://api.github.com/repos/MangriMen/TRND/releases/latest").json()
-        if ('message' not in response) or (response['message'] != 'Not Found'):
-            self.lblLatestVersion.setText(response["name"])
-            self.teUpdateChangeList.setText(response['body'])
-            if sender == 'timer':
-                if (float(response['name']) > float(os.environ.get('VERSION_NOW'))) and self.isUpdateQuestion:
-                    res = QMessageBox.question(self, 'Новая версия', 'Доступна новая версия. Перейти к странице '
-                                                                     'обновления?',
-                                               (QMessageBox.Ok | QMessageBox.Cancel))
-                    if res == QMessageBox.Ok:
-                        self.tabWidgetMain.setCurrentIndex(2)
-                    elif res == QMessageBox.Cancel:
-                        self.isUpdateQuestion = False
-        else:
-            self.lblLatestVersion.setText('не найдена')
+
+        if 'message' in response:
+            if re.search('rate limit', response['message']):
+                QMessageBox.question(self, 'Ошибка', 'Превышено количество запросов, попробуйте позже.', QMessageBox.Ok)
+                self.lblLatestVersion.setText('не найдена')
+                return
+            elif response['message'] == 'Not Found':
+                self.lblLatestVersion.setText('не найдена')
+                return
+
+        self.lblLatestVersion.setText(response["name"])
+        self.teUpdateChangeList.setText(response['body'])
+        if sender == 'timer':
+            if (float(response['name']) > float(os.environ.get('VERSION_NOW'))) and self.isUpdateQuestion:
+                res = QMessageBox.question(self, 'Новая версия', 'Доступна новая версия. Перейти к странице '
+                                                                 'обновления?',
+                                           (QMessageBox.Ok | QMessageBox.Cancel))
+                if res == QMessageBox.Ok:
+                    self.tabWidgetMain.setCurrentIndex(2)
+                elif res == QMessageBox.Cancel:
+                    self.isUpdateQuestion = False
+
+    class DownloadWorker(QObject):
+        finished = pyqtSignal()
+        progress = pyqtSignal(int)
+
+        def __init__(self, total_length, downloaded_file):
+            super().__init__()
+            self.total_length = total_length
+            self.downloaded_file = downloaded_file
+
+        def run(self):
+            with open(tempfile.gettempdir() + '\\TRND_update.exe', 'wb') as file:
+                if self.total_length is None:
+                    file.write(self.downloaded_file.content)
+                else:
+                    dl = 0
+                    for data in self.downloaded_file.iter_content(chunk_size=4096):
+                        dl += len(data)
+                        file.write(data)
+                        self.progress.emit(dl)
+            self.finished.emit()
+
+    def SelfUpdate(self):
+        response = requests.get("https://api.github.com/repos/MangriMen/TRND/releases/latest").json()
+
+        if 'message' in response:
+            if re.search('rate limit', response['message']):
+                QMessageBox.question(self, 'Ошибка', 'Превышено количество запросов, попробуйте позже.', QMessageBox.Ok)
+                return
+
+        if 'assets' not in response:
+            QMessageBox.question(self, 'Ошибка', 'Ошибка получения данных.', QMessageBox.Ok)
+            return
+
+        if float(response['name']) <= float(os.environ.get('VERSION_NOW')):
+            QMessageBox.question(self, 'Ошибка', 'Уже установлена новейшая версия.', QMessageBox.Ok)
+            return
+
+        download_link = ''
+        for asset in response['assets']:
+            if re.search('.exe', asset['browser_download_url']):
+                download_link = asset['browser_download_url']
+                break
+
+        if download_link == '':
+            QMessageBox.question(self, 'Ошибка', 'Ошибка получения данных.', QMessageBox.Ok)
+            return
+
+        downloaded_file = requests.get(download_link, allow_redirects=True, stream=True)
+
+        total_length = downloaded_file.headers.get('content-length')
+        total_length_display = str(int(int(total_length) / 1024)) + ' КБ'
+
+        dlg = QProgressDialog('', 'Отмена', 0, int(total_length), self, Qt.WindowTitleHint)
+        dlg.setWindowTitle('Загрузка инсталлятора')
+
+        lblText = QLabel()
+        lblText.setAlignment(Qt.AlignCenter)
+        dlg.setLabel(lblText)
+
+        btnCancel = QPushButton()
+        dlg.setCancelButton(btnCancel)
+        btnCancel.hide()
+        dlg.show()
+
+        self.thread = QThread()
+        self.worker = self.DownloadWorker(total_length, downloaded_file)
+        self.worker.moveToThread(self.thread)
+        self.thread.started.connect(self.worker.run)
+        self.worker.finished.connect(self.thread.quit)
+        self.worker.finished.connect(self.worker.deleteLater)
+        self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.progress.connect(
+            lambda value: dlg.setValue(value)
+        )
+        self.worker.progress.connect(
+            lambda value: lblText.setText(str(int(value/1024)) + ' КБ / ' + total_length_display)
+        )
+
+        self.thread.finished.connect(
+            lambda: subprocess.Popen([tempfile.gettempdir() + '\\TRND_update.exe']) and self.close() and sys.exit()
+        )
+
+        self.thread.start()
 
     def ImportJson(self):
         pathToJson = QFileDialog().getOpenFileName(self, 'Import JSON', '/', "json(*.json);; all(*.*)")[0]
