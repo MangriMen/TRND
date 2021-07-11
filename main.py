@@ -6,23 +6,25 @@ from PyQt5 import QtGui
 from PyQt5.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
-from window import MyWindow
-
-if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
-    os.chdir(sys._MEIPASS)
+from libs.window import MyWindow
 
 
-# Adding path to internal json
 def init_environ():
+    if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
+        os.chdir(sys._MEIPASS)
+
+    # Adding path to internal json
     if platform.system() == 'Windows':
         os.environ['DATAFOLDER'] = os.environ.get('APPDATA') + '\\TRND\\'
         os.environ['DATAFILE'] = os.environ.get('APPDATA') + '\\TRND\\data.json'
     else:
-        os.environ['DATAFOLDER'] = os.environ.get('USERPROFILE') + '\\.trnd\\'
-        os.environ['DATAFILE'] = os.environ.get('USERPROFILE') + '\\.trnd\\data.json'
+        os.environ['DATAFOLDER'] = os.environ.get('HOME') + '/.trnd/'
+        os.environ['DATAFILE'] = os.environ.get('HOME') + '/.trnd/data.json'
+
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
-    os.environ['VERSION_NOW'] = '0.12'
+
+    os.environ['VERSION_NOW'] = '0.13'
 
 
 def suppress_qt_warnings():
@@ -32,24 +34,23 @@ def suppress_qt_warnings():
     os.environ["QT_SCALE_FACTOR"] = "1"
 
 
-def main():
-    # init
-    suppress_qt_warnings()
-    init_environ()
-    app = QApplication(sys.argv)
-
-    QtGui.QFontDatabase.addApplicationFont("Roboto-Regular.ttf")  # add font
-    apply_stylesheet(app, theme="tarkov_theme.xml")  # apply theme
-
-    #  apply additional style
-    with open('additional_style.css') as file:
+def apply_theme(app):
+    QtGui.QFontDatabase.addApplicationFont("data/Roboto-Regular.ttf")
+    apply_stylesheet(app, theme="data/tarkov_theme.xml")
+    with open('data/additional_style.css') as file:
         app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
 
-    # create windows
+
+def main():
+    suppress_qt_warnings()
+    init_environ()
+
+    app = QApplication(sys.argv)
+    apply_theme(app)
+
     window = MyWindow()
     window.show()
 
-    # exit
     sys.exit(app.exec_())
 
 

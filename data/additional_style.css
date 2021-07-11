@@ -1,0 +1,16 @@
+* {{
+  font-family: 'Roboto';
+}}
+
+QPushButton:hover {{
+  background-color: {QTMATERIAL_SECONDARYLIGHTCOLOR};
+}}
+
+QMenu {{
+  margin: 0;
+}}
+
+QProgressBar {{
+  color: {QTMATERIAL_SECONDARYTEXTCOLOR};
+  border-radius: 4px;
+}}
