@@ -106,11 +106,14 @@
                 <property name="font">
                  <font>
                   <family>MS Shell Dlg 2</family>
-                  <pointsize>12</pointsize>
+                  <pointsize>11</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                  <underline>false</underline>
                  </font>
                 </property>
                 <property name="text">
-                 <string>Поиск:</string>
+                 <string>ПОИСК:</string>
                 </property>
                </widget>
               </item>
@@ -237,11 +240,14 @@
                 </property>
                 <property name="font">
                  <font>
-                  <pointsize>12</pointsize>
+                  <pointsize>10</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                  <underline>false</underline>
                  </font>
                 </property>
                 <property name="text">
-                 <string>Случайное оружие</string>
+                 <string>СЛУЧАЙНОЕ ОРУЖИЕ</string>
                 </property>
                 <property name="checked">
                  <bool>true</bool>
@@ -359,11 +365,13 @@
          <widget class="QLabel" name="lblTotal">
           <property name="font">
            <font>
-            <pointsize>10</pointsize>
+            <pointsize>8</pointsize>
+            <weight>75</weight>
+            <bold>true</bold>
            </font>
           </property>
           <property name="text">
-           <string>Всего:</string>
+           <string>ВСЕГО:</string>
           </property>
          </widget>
         </item>
@@ -382,7 +390,9 @@
             </property>
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>8</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="frameShape">
@@ -395,7 +405,7 @@
              <number>1</number>
             </property>
             <property name="text">
-             <string>Сейчас:</string>
+             <string>СЕЙЧАС:</string>
             </property>
             <property name="textFormat">
              <enum>Qt::AutoText</enum>
@@ -416,6 +426,8 @@
             <property name="font">
              <font>
               <pointsize>10</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -440,13 +452,15 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>320</width>
+              <width>350</width>
               <height>0</height>
              </size>
             </property>
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
+              <pointsize>11</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -495,13 +509,15 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>320</width>
+              <width>350</width>
               <height>0</height>
              </size>
             </property>
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
+              <pointsize>11</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
@@ -673,17 +689,19 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>160</width>
+              <width>165</width>
               <height>0</height>
              </size>
             </property>
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
+              <pointsize>10</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">
-             <string>Версия приложения:</string>
+             <string>ВЕРСИЯ ПРИЛОЖЕНИЯ:</string>
             </property>
            </widget>
           </item>
@@ -691,7 +709,9 @@
            <widget class="QLabel" name="lblVersion">
             <property name="font">
              <font>
-              <pointsize>12</pointsize>
+              <pointsize>10</pointsize>
+              <weight>75</weight>
+              <bold>true</bold>
              </font>
             </property>
             <property name="text">

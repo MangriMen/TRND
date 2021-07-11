@@ -133,14 +133,14 @@ class MyWindow(QMainWindow):
         if 'mods' not in self.jsonData:
             self.jsonData['mods'] = dict()
 
-        self.lblUpdateWeapons.setText("Оружие обновленно " + utils.date_to_str(
+        self.lblUpdateWeapons.setText("ОРУЖИЕ ОБНОВЛЕННО " + utils.date_to_str(
             self.jsonData['weaponsLastUpdate'],
             self.date_format_str
-        ))
-        self.lblUpdateMods.setText("Моды обновленны " + utils.date_to_str(
+        ).upper())
+        self.lblUpdateMods.setText("МОДЫ ОБНОВЛЕННЫ " + utils.date_to_str(
             self.jsonData['modsLastUpdate'],
             self.date_format_str
-        ))
+        ).upper())
 
         utils.dump_data(self.jsonData)
 
