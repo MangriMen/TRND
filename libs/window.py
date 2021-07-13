@@ -7,12 +7,12 @@ import tempfile
 
 import requests
 from PyQt5 import uic
-from PyQt5.Qt import QStandardItemModel, QDesktopServices, QUrl, QMenu, QApplication
+from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
 from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel
 
 from libs import utils
-from libs.qt_extends import StandardItem, JsonModel, ThreadController, showDetailedError
+from libs.qt_extends import JsonModel, ThreadController, showDetailedError
 from libs.wiki_parser import get_data_from_wiki
 
 
@@ -123,18 +123,18 @@ class MyWindow(QMainWindow):
         self.jsonData = utils.load_data()
         self.jsonData = utils.validate_data(self.jsonData)
 
-        self.lblUpdateWeapons.setText("ОРУЖИЕ ОБНОВЛЕННО " + utils.date_to_str(
-            self.jsonData['weaponsLastUpdate'],
-            self.date_format_str
-        ).upper())
-        self.lblUpdateMods.setText("МОДЫ ОБНОВЛЕННЫ " + utils.date_to_str(
-            self.jsonData['modsLastUpdate'],
-            self.date_format_str
-        ).upper())
+        self.lblUpdateWeapons.setText(
+            "ОРУЖИЕ ОБНОВЛЕННО "
+            + utils.date_to_str(self.jsonData['weaponsLastUpdate'], self.date_format_str).upper()
+        )
+        self.lblUpdateMods.setText(
+            "МОДЫ ОБНОВЛЕННЫ "
+            + utils.date_to_str(self.jsonData['modsLastUpdate'], self.date_format_str).upper()
+        )
 
         utils.dump_data(self.jsonData)
 
-        self.treeModel.fillModel(self.jsonData)
+        self.treeModel.fillModel(self.jsonData['weapons'])
         self.twMain.setModel(self.treeModel)
         self.twMain.setCurrentIndex(self.treeModel.createIndex(0, 0))
 
@@ -158,21 +158,21 @@ class MyWindow(QMainWindow):
 
     @pyqtSlot()
     def random_weapon(self):
-        def fill_with_random_children(row, json_):
+        def create_random_weapon(randomJson_, key_, json_):
+            randomJson_[key_] = dict()
             if json_ is None:
                 return
             elif isinstance(json_, dict):
                 for key, val in sorted(json_.items()):
-                    newItem = StandardItem(key)
-                    row.appendRow(newItem)
-                    fill_with_random_children(newItem, val)
+                    create_random_weapon(randomJson_[key_], key, val)
             elif isinstance(json_, (list, tuple)):
                 rand = random.choice(json_)
                 rand_str = str(rand)
-                newItem = StandardItem(rand_str)
                 if rand_str in self.jsonData['mods']:
-                    fill_with_random_children(newItem, self.jsonData['mods'][rand])
-                row.appendRow(newItem)
+                    randomJson_[key_] = dict()
+                    create_random_weapon(randomJson_[key_], rand_str, self.jsonData['mods'][rand])
+                else:
+                    randomJson_[key_] = rand_str
 
         if self.twMain.model().rowCount() == 0:
             return
@@ -185,22 +185,18 @@ class MyWindow(QMainWindow):
             self.twMain.setCurrentIndex(self.twMain.model().createIndex(index, 0))
 
         name = self.twMain.selectedIndexes()[0]
-
         if not self.chboxIsRandomWeapon.isChecked():
             while name.parent().data() is not None:
                 name = name.parent()
-
         name = name.data()
 
-        OutModel = QStandardItemModel()
-        Root = OutModel.invisibleRootItem()
-        self.twRandom.setModel(OutModel)
+        randomJson = dict()
+        create_random_weapon(randomJson, name, self.jsonData['weapons'][name])
 
-        weapon = StandardItem(name)
-        Root.appendRow(weapon)
+        outModel = JsonModel()
+        outModel.fillModel(randomJson)
 
-        fill_with_random_children(weapon, self.jsonData['weapons'][name])
-
+        self.twRandom.setModel(outModel)
         self.twRandom.expandAll()
 
     def start_update_restrict_timeout(self):
