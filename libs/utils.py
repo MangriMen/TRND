@@ -20,9 +20,22 @@ def load_data():
         return json_
 
 
-def dump_data(out_dict):
+def dump_data(dict_):
     with open(os.environ.get('DATAFILE'), 'w', encoding='utf-8') as fileOut:
-        json.dump(out_dict, fileOut, indent=2, ensure_ascii=False)
+        json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
+        
+
+def get_json_dump(dict_):
+    return json.dumps(dict_, indent=2, ensure_ascii=False) if isinstance(dict_, dict) else None
+
+
+def get_json_loads(str_):
+    try:
+        json_ = json.loads(str_)
+    except json.decoder.JSONDecodeError:
+        return None
+    else:
+        return json_
 
 
 def rewrite_file_to_file(fileInPath, fileOutPath):
@@ -37,16 +50,16 @@ def rewrite_file_to_file(fileInPath, fileOutPath):
         return True
 
 
-def date_to_str(iso_date, format_str):
-    if iso_date == 'unknown':
+def date_to_str(isoDate, format_str):
+    if isoDate == 'unknown':
         return 'неизвестно'
 
     out = ''
     try:
-        out = datetime.datetime.fromisoformat(iso_date).strftime(format_str)
+        out = datetime.datetime.fromisoformat(isoDate).strftime(format_str)
     except ValueError:
-        iso_date = datetime.datetime.now().isoformat()
-        out = date_to_str(iso_date, format_str)
+        isoDate = datetime.datetime.now().isoformat()
+        out = date_to_str(isoDate, format_str)
     finally:
         return out
 

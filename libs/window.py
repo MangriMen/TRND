@@ -29,7 +29,6 @@ class MyWindow(QMainWindow):
         self.update_thread = None
         self.data_thread = None
         self.jsonData = None
-        self.detailedMessage = None
 
         self.isUpdateQuestion = True
 
@@ -81,16 +80,36 @@ class MyWindow(QMainWindow):
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
         @pyqtSlot()
-        def custom_tree_view_copy_action():
+        def custom_tree_view_copy_text():
             if self.twRandom.model():
                 twRandomRoot = self.twRandom.model().invisibleRootItem()
                 out = JsonModel.modelToText(twRandomRoot)
                 QApplication.clipboard().setText(out.rstrip())
 
         @pyqtSlot()
+        def custom_tree_view_copy_json():
+            if self.twRandom.model():
+                twRandomRoot = self.twRandom.model().invisibleRootItem()
+                JsonModel.modelToJson(twRandomRoot.child(0, 0), out := dict(), twRandomRoot.child(0, 0).text())
+                out = utils.get_json_dump(out)
+                if out is not None:
+                    QApplication.clipboard().setText(out)
+
+        @pyqtSlot(str)
+        def custom_tree_view_paste_json(json_):
+            if not self.twRandom.model():
+                self.twRandom.setModel(JsonModel())
+            json_ = utils.get_json_loads(json_)
+            if json_ is not None:
+                self.twRandom.model().fillModel(json_)
+                self.twRandom.expandAll()
+
+        @pyqtSlot()
         def custom_tree_view_context_menu(location):
             menu = QMenu(self)
-            menu.addAction('Копировать', custom_tree_view_copy_action)
+            menu.addAction('Копировать текст', custom_tree_view_copy_text)
+            menu.addAction('Копировать JSON', custom_tree_view_copy_json)
+            menu.addAction('Вставить JSON', lambda: custom_tree_view_paste_json(QApplication.clipboard().text()))
             menu.popup(self.twRandom.mapToGlobal(location))
 
         self.twRandom.customContextMenuRequested.connect(custom_tree_view_context_menu)
@@ -166,13 +185,12 @@ class MyWindow(QMainWindow):
                 for key, val in sorted(json_.items()):
                     create_random_weapon(randomJson_[key_], key, val)
             elif isinstance(json_, (list, tuple)):
-                rand = random.choice(json_)
-                rand_str = str(rand)
+                rand_str = str(random.choice(json_))
                 if rand_str in self.jsonData['mods']:
-                    randomJson_[key_] = dict()
-                    create_random_weapon(randomJson_[key_], rand_str, self.jsonData['mods'][rand])
+                    create_random_weapon(randomJson_[key_], rand_str, self.jsonData['mods'][rand_str])
                 else:
-                    randomJson_[key_] = rand_str
+                    randomJson_[key_] = list()
+                    randomJson_[key_].append(rand_str)
 
         if self.twMain.model().rowCount() == 0:
             return
@@ -190,8 +208,7 @@ class MyWindow(QMainWindow):
                 name = name.parent()
         name = name.data()
 
-        randomJson = dict()
-        create_random_weapon(randomJson, name, self.jsonData['weapons'][name])
+        create_random_weapon(randomJson := dict(), name, self.jsonData['weapons'][name])
 
         outModel = JsonModel()
         outModel.fillModel(randomJson)
@@ -199,6 +216,7 @@ class MyWindow(QMainWindow):
         self.twRandom.setModel(outModel)
         self.twRandom.expandAll()
 
+    @pyqtSlot()
     def start_update_restrict_timeout(self):
         self.btnCheckNewVersion.setEnabled(False)
         self.btnCheckNewVersion.setText(''.join([
