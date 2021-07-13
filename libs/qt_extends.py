@@ -28,14 +28,14 @@ class JsonModel(QStandardItemModel):
 
         self.root = self.invisibleRootItem()
 
-    def fillFromJson(self, row, json_):
+    def __fillFromJson(self, row, json_):
         if json_ is None:
             return
         elif isinstance(json_, dict):
             for key, val in sorted(json_.items()):
                 newItem = StandardItem(key)
                 row.appendRow(newItem)
-                self.fillFromJson(newItem, val)
+                self.__fillFromJson(newItem, val)
         elif isinstance(json_, (list, tuple)):
             for val in json_:
                 text = (str(val) if not isinstance(val, (dict, list, tuple))
@@ -47,7 +47,7 @@ class JsonModel(QStandardItemModel):
     def fillModel(self, json_):
         self.clearModel()
         try:
-            self.fillFromJson(self.root, json_['weapons'])
+            self.__fillFromJson(self.root, json_)
         except KeyError:
             pass
 
