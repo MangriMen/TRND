@@ -1,6 +1,9 @@
-from PyQt5.Qt import QStandardItemModel, QStandardItem, QObject
+import typing
+
+from PyQt5.Qt import QStandardItemModel, QStandardItem, QObject, QMessageBox
 from PyQt5.QtCore import pyqtSignal, pyqtSlot, QThread
-from PyQt5.QtGui import QFont, QColor
+from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon
+from PyQt5.QtWidgets import QMainWindow, QApplication
 
 from libs import utils
 
@@ -80,30 +83,36 @@ class ThreadController:
         self.worker.finished.connect(self.thread.quit)
         self.worker.finished.connect(self.worker.deleteLater)
         self.thread.finished.connect(self.thread.deleteLater)
+        self.worker.finished.connect(self.__stopThread)
 
     def start(self):
         self.isRunning = True
         self.thread.start()
 
     def stop(self):
-        self.isRunning = False
         self.worker.stop()
-        self.thread.quit()
-        self.thread.wait()
 
     def terminate(self):
         self.isRunning = False
         self.thread.terminate()
 
+    def __stopThread(self):
+        self.isRunning = False
+        self.thread.quit()
+        self.thread.wait()
+
 
 class ThreadWorker(QObject):
     finished = pyqtSignal()
+    error = pyqtSignal(str, str, str)
 
     def __init__(self, function_, **kwargs):
         super(ThreadWorker, self).__init__()
         self.isRunning = False
         self.function_ = function_
         self.args = kwargs
+        self.error.connect(self.stop)
+        self.error.connect(showDetailedError)
 
     def run(self):
         utils.thread_print('worker.run')
@@ -120,3 +129,24 @@ class ThreadWorker(QObject):
             self.__class__.__name__, self.__class__.__bases__,
             {**self.__class__.__dict__, name: pyqtSignal(*args)},
         )
+
+
+def findMainWindow() -> typing.Union[QMainWindow, None]:
+    app = QApplication.instance()
+    for widget in app.topLevelWidgets():
+        if isinstance(widget, QMainWindow):
+            return widget
+    return None
+
+
+@pyqtSlot(str, str, str)
+def showDetailedError(title, text, detailedText):
+    detailedMessage = QMessageBox(findMainWindow())
+    detailedMessage.setWindowIcon(QIcon(QPixmap('data/icon.ico')))
+    detailedMessage.setIcon(QMessageBox.Critical)
+    detailedMessage.setWindowTitle(title)
+    detailedMessage.setText(text)
+    detailedMessage.setDetailedText(detailedText)
+    detailedMessage.setDefaultButton(QMessageBox.Ok)
+    detailedMessage.show()
+

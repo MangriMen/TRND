@@ -60,16 +60,10 @@ def get_update_info(githubLinkLatestRelease):
         response = requests.get(githubLinkLatestRelease)
         response.raise_for_status()
         response = response.json()
-    except requests.exceptions.HTTPError as err:
-        return {'result': False, 'error': "HTTP Error", 'error_msg': str(err), 'data': err.response}
-    except requests.exceptions.ConnectionError as err:
-        return {'result': False, 'error': "Connection Error", 'error_msg': str(err), 'data': err.response}
-    except requests.exceptions.Timeout as err:
-        return {'result': False, 'error': "Timeout Error", 'error_msg': str(err), 'data': err.response}
     except requests.exceptions.RequestException as err:
-        return {'result': False, 'error': "Other Error", 'error_msg': str(err), 'data': err.response}
+        return {'result': False, 'error': str(err.__class__.__name__), 'error_msg': str(err), 'data': err.response}
     except json.JSONDecodeError as err:
-        return {'result': False, 'error': "JSON Decode Error", 'error_msg': str(err), 'data': None}
+        return {'result': False, 'error': str(err.__class__.__name__), 'error_msg': str(err), 'data': None}
 
     result = True
     error = None
@@ -86,3 +80,20 @@ def get_update_info(githubLinkLatestRelease):
             error_msg = 'Не найден список версий.'
 
     return {'result': result, 'error': error, 'error_msg': error_msg, 'data': response}
+
+
+def validate_data(jsonData):
+    if jsonData is None:
+        jsonData = dict()
+    if 'weaponsLastUpdate' not in jsonData:
+        jsonData['weaponsLastUpdate'] = 'unknown'
+    if 'modsLastUpdate' not in jsonData:
+        jsonData['modsLastUpdate'] = 'unknown'
+    if 'weapons' not in jsonData:
+        jsonData['weapons'] = dict()
+    if 'mods' not in jsonData:
+        jsonData['mods'] = dict()
+    if 'modsConflicts' not in jsonData:
+        jsonData['modsConflicts'] = dict()
+
+    return jsonData

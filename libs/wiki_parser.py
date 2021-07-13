@@ -4,48 +4,61 @@ import time
 
 import requests
 from bs4 import BeautifulSoup
+from libs import utils
 
 
 def get_data_from_wiki(worker_, dict_):
+    def showError():
+        worker_.error.emit(
+            str(err.__class__.__name__),
+            'Произошла непредвиденная ошибка при загрузке данных.',
+            str(err)
+        )
     site = 'https://escapefromtarkov.fandom.com'
-    url_weapons = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B8%D0%B5'
-    url_mods = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B5%D0%B9%D0%BD%D1%8B%D0%B5_' \
-               '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B '
+    urlWeapons = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B8%D0%B5'
+    urlMods = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B5%D0%B9%D0%BD%D1%8B%D0%B5_' \
+              '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B '
 
-    min_s = 0
-    max_s = 10e9  # 10e9
+    weapons = 'weapons'
+    mods = 'mods'
+    modsConflicts = 'modsConflicts'
+    mainBlockClass = 'mw-parser-output'
+    weaponNameBlockClass = 'firstHeading'
+    modsBlockId = 'Моды'
+    compatibilityTabTitle = 'Совместимость'
+    conflictsTabTitle = 'Конфликтующие моды'
 
-    if dict_['jsonData'] is None:
-        out_dict = dict()
-    else:
-        out_dict = dict_['jsonData']
-    if 'weaponsLastUpdate' not in out_dict:
-        out_dict['weaponsLastUpdate'] = 'unknown'
-    if 'modsLastUpdate' not in out_dict:
-        out_dict['modsLastUpdate'] = 'unknown'
-    if 'weapons' not in out_dict:
-        out_dict['weapons'] = dict()
-    if 'mods' not in out_dict:
-        out_dict['mods'] = dict()
+    firstLevelFormatStr = '%4s%s'
+    secondLevelFormatStr = '%8s%s'
+    thirdLevelFormatStr = '%12s%s'
 
-    download_time = time.perf_counter()
+    outDict = utils.validate_data(dict_['jsonData'])
 
-    if dict_['type'] == 'weapons' or dict_['type'] == 'mods':
+    downloadTime = time.perf_counter()
+    if dict_['type'] == weapons or dict_['type'] == mods:
         min_f = 0
+        min_s = 0
 
-        if dict_['type'] == 'weapons':
-            max_f = 9  # 9
-            html = requests.get(url_weapons)
-        elif dict_['type'] == 'mods':
-            max_f = 10e9
-            html = requests.get(url_mods)
+        if dict_['type'] == weapons:
+            maxF = 9  # 9
+            maxS = 10e9  # 10e9
+            queryPage = urlWeapons
+        elif dict_['type'] == mods:
+            maxF = 10e9  # 10e9
+            maxS = 10e9  # 10e9
+            queryPage = urlMods
         else:
             return
 
-        soup = BeautifulSoup(html.text, 'lxml')
+        try:
+            html = requests.get(queryPage)
+            html.raise_for_status()
+        except requests.exceptions.RequestException as err:
+            showError()
+            return
 
-        parser_output = soup.find('div', class_='mw-parser-output')
-        headers_ = parser_output.findAll('h3')
+        soup = BeautifulSoup(html.text, 'lxml')
+        headers_ = soup.find('div', class_=mainBlockClass).findAll('h3')
 
         header_counter = 0
         for header_ in headers_:
@@ -54,7 +67,7 @@ def get_data_from_wiki(worker_, dict_):
 
             if header_counter < min_f:
                 continue
-            elif header_counter >= max_f:
+            elif header_counter >= maxF:
                 break
             header_counter += 1
 
@@ -76,7 +89,7 @@ def get_data_from_wiki(worker_, dict_):
 
                 if inner_counter < min_s:
                     continue
-                elif inner_counter >= max_s:
+                elif inner_counter >= maxS:
                     break
                 inner_counter += 1
 
@@ -88,18 +101,26 @@ def get_data_from_wiki(worker_, dict_):
                 if a_ is None:
                     continue
 
-                r = requests.get(site + a_.get('href'))
+                try:
+                    r = requests.get(site + a_.get('href'))
+                    r.raise_for_status()
+                except requests.exceptions.RequestException as err:
+                    showError()
+                    return
+
                 page = BeautifulSoup(r.text, 'lxml')
 
-                weapon_name = page.find('h1', class_='firstHeading')
-                mods = page.find('div', class_='mw-parser-output').find('span', id='Моды')
+                weapon_name = page.find('h1', class_=weaponNameBlockClass)
+                if weapon_name is None:
+                    continue
 
-                if worker_.isRunning:
-                    worker_.display_text.emit('%4s%s' % ('', a_.get('title')))
-                worker_.local_progress.emit(int(math.ceil(inner_counter / len(table_) * 100)))
-
+                mods = page.find('div', class_=mainBlockClass).find('span', id=modsBlockId)
                 if mods is None:
                     continue
+
+                if worker_.isRunning:
+                    worker_.display_text.emit(firstLevelFormatStr % ('', a_.get('title')))
+                worker_.local_progress.emit(int(math.ceil(inner_counter / len(table_) * 100)))
 
                 mods_tables = mods.findParent().find_next_sibling().findChild().findAll('div')
 
@@ -108,11 +129,13 @@ def get_data_from_wiki(worker_, dict_):
                         return None
 
                     category = mod_tab.get('title').capitalize()
-                    if category == 'Совместимость':
+                    if category == compatibilityTabTitle:
                         continue
+                    elif category == conflictsTabTitle:
+                        outDict[modsConflicts][weapon_name.text] = list()
 
                     if worker_.isRunning:
-                        worker_.display_text.emit('%8s%s' % ('', category))
+                        worker_.display_text.emit(secondLevelFormatStr % ('', category))
 
                     mod_table = mod_tab.findAll('tr')
                     if mod_table is None:
@@ -130,36 +153,34 @@ def get_data_from_wiki(worker_, dict_):
                             continue
 
                         if worker_.isRunning:
-                            worker_.display_text.emit('%12s%s' % ('', mod_a.text))
+                            worker_.display_text.emit(thirdLevelFormatStr % ('', mod_a.text))
 
-                        if dict_['type'] == 'weapons':
-                            if weapon_name.text not in out_dict[dict_['type']]:
-                                out_dict[dict_['type']][weapon_name.text] = dict()
+                        if category == conflictsTabTitle:
+                            outDict[modsConflicts][weapon_name.text].append(mod_a.text)
+                        elif dict_['type'] == weapons:
+                            if weapon_name.text not in outDict[dict_['type']]:
+                                outDict[dict_['type']][weapon_name.text] = dict()
 
-                            if category not in out_dict[dict_['type']][weapon_name.text]:
-                                out_dict[dict_['type']][weapon_name.text][category] = list()
+                            if category not in outDict[dict_['type']][weapon_name.text]:
+                                outDict[dict_['type']][weapon_name.text][category] = list()
 
-                            if mod_a.text not in out_dict[dict_['type']][weapon_name.text][category]:
-                                out_dict[dict_['type']][weapon_name.text][category].append(mod_a.text)
-                        elif dict_['type'] == 'mods':
-                            if weapon_name.text not in out_dict[dict_['type']]:
-                                out_dict[dict_['type']][weapon_name.text] = list()
+                            if mod_a.text not in outDict[dict_['type']][weapon_name.text][category]:
+                                outDict[dict_['type']][weapon_name.text][category].append(mod_a.text)
+                        elif dict_['type'] == mods:
+                            if weapon_name.text not in outDict[dict_['type']]:
+                                outDict[dict_['type']][weapon_name.text] = list()
 
-                            if mod_a.text not in out_dict[dict_['type']][weapon_name.text]:
-                                out_dict[dict_['type']][weapon_name.text].append(mod_a.text)
+                            if mod_a.text not in outDict[dict_['type']][weapon_name.text]:
+                                outDict[dict_['type']][weapon_name.text].append(mod_a.text)
 
-    elapsed = time.perf_counter() - download_time
+    elapsed = time.perf_counter() - downloadTime
     elapsed_str = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))
-
-    if dict_['is_debug']:
-        print(elapsed_str)
-
     worker_.display_text.emit(elapsed_str)
 
     now_date = datetime.datetime.now().isoformat()
-    if dict_['type'] == 'weapons':
-        out_dict['weaponsLastUpdate'] = now_date
-    elif dict_['type'] == 'mods':
-        out_dict['modsLastUpdate'] = now_date
+    if dict_['type'] == weapons:
+        outDict['weaponsLastUpdate'] = now_date
+    elif dict_['type'] == mods:
+        outDict['modsLastUpdate'] = now_date
 
-    return out_dict
+    return outDict
