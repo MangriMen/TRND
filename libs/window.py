@@ -12,7 +12,7 @@ from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel
 
 from libs import utils
-from libs.qt_extends import StandardItem, JsonModel, ThreadController
+from libs.qt_extends import StandardItem, JsonModel, ThreadController, showDetailedError
 from libs.wiki_parser import get_data_from_wiki
 
 
@@ -121,17 +121,7 @@ class MyWindow(QMainWindow):
     @pyqtSlot()
     def update_json(self):
         self.jsonData = utils.load_data()
-
-        if self.jsonData is None:
-            self.jsonData = dict()
-        if 'weaponsLastUpdate' not in self.jsonData:
-            self.jsonData['weaponsLastUpdate'] = 'unknown'
-        if 'modsLastUpdate' not in self.jsonData:
-            self.jsonData['modsLastUpdate'] = 'unknown'
-        if 'weapons' not in self.jsonData:
-            self.jsonData['weapons'] = dict()
-        if 'mods' not in self.jsonData:
-            self.jsonData['mods'] = dict()
+        self.jsonData = utils.validate_data(self.jsonData)
 
         self.lblUpdateWeapons.setText("ОРУЖИЕ ОБНОВЛЕННО " + utils.date_to_str(
             self.jsonData['weaponsLastUpdate'],
@@ -213,16 +203,6 @@ class MyWindow(QMainWindow):
 
         self.twRandom.expandAll()
 
-    def show_detailed_error(self, title, text, detailedText):
-        self.detailedMessage = QMessageBox()
-        self.detailedMessage.setWindowIcon(self.windowIcon())
-        self.detailedMessage.setIcon(QMessageBox.Critical)
-        self.detailedMessage.setWindowTitle(title)
-        self.detailedMessage.setText(text)
-        self.detailedMessage.setDetailedText(detailedText)
-        self.detailedMessage.setDefaultButton(QMessageBox.Ok)
-        self.detailedMessage.show()
-
     def start_update_restrict_timeout(self):
         self.btnCheckNewVersion.setEnabled(False)
         self.btnCheckNewVersion.setText(''.join([
@@ -252,11 +232,10 @@ class MyWindow(QMainWindow):
 
         if not response['result']:
             if sender == 'button':
-                self.show_detailed_error(
-                    'Ошибка обновления: ' + response['error'],
+                showDetailedError(
+                    'Ошибка обновления: ' + str(response['error']),
                     'Невозможно получить данные для обновления.',
-                    response['error_msg']
-                )
+                    str(response['error_msg']))
             return
 
         self.teUpdateChangeList.setText('Последняя версия: ' + response['data'][0]['tag_name'])
