@@ -70,6 +70,20 @@ class JsonModel(QStandardItemModel):
             text += JsonModel.modelToText(item.child(i, 0), indent + '    ')
         return text
 
+    @staticmethod
+    def modelToJson(item, json_, key_):
+        if item.hasChildren():
+            isDict = False
+            for i in range(item.rowCount()):
+                if item.child(i, 0).hasChildren():
+                    isDict = True
+                    break
+            json_[key_] = dict() if isDict else list()
+            for i in range(item.rowCount()):
+                JsonModel.modelToJson(item.child(i, 0), json_[key_], item.child(i, 0).text())
+        else:
+            json_.append(item.text())
+
 
 class ThreadController:
     def __init__(self, function_, **kwargs):
