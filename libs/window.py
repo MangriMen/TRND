@@ -218,13 +218,24 @@ class MyWindow(QMainWindow):
                                 conflicts_.append(child_)
 
         if self.twRandom.model():
-            rootFirstChild_ = self.twRandom.model().invisibleRootItem().child(0, 0)
-            JsonModel.modelToJson(rootFirstChild_, weaponJson := dict(), rootFirstChild_.text())
-            get_last_children(rootFirstChild_, weaponJson[rootFirstChild_.text()], conflicts := list())
-            if conflicts:
-                res = QMessageBox.question(self, 'Конфликт модов', 'Некоторые моды конфликтуют между собой.\nХотите '
-                                                                   'перегенерировать их?')
-                if res == QMessageBox.Yes:
+            isQuestion = True
+            while True:
+                rootFirstChild_ = self.twRandom.model().invisibleRootItem().child(0, 0)
+                JsonModel.modelToJson(rootFirstChild_, weaponJson := dict(), rootFirstChild_.text())
+                get_last_children(rootFirstChild_, weaponJson[rootFirstChild_.text()], conflicts := list())
+
+                if not conflicts:
+                    break
+
+                if isQuestion:
+                    res = QMessageBox.question(self, 'Конфликт модов', 'Некоторые моды конфликтуют между '
+                                                                       'собой.\nХотите перегенерировать их?')
+                    if res == QMessageBox.Yes:
+                        isQuestion = False
+                    else:
+                        return
+
+                if not isQuestion:
                     for conflict_ in conflicts:
                         conflict_.setBackground(QColor(0, 0, 0, 0))
                     randomConflict = random.choice(conflicts)
@@ -505,13 +516,15 @@ class MyWindow(QMainWindow):
 
         self.twRandom.model().fillModel(out)
         self.twRandom.expandAll()
-        self.resolve_mod_conflicts()
 
     @pyqtSlot()
     def custom_tree_view_context_menu(self, location):
+        def replace_random_and_check_conflicts():
+            self.custom_tree_view_replace_random(index)
+            self.resolve_mod_conflicts()
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():
-            menu.addAction('Перегенерировать', lambda: self.custom_tree_view_replace_random(index))
+            menu.addAction('Перегенерировать', replace_random_and_check_conflicts)
             menu.addSeparator()
         menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
         menu.addAction('Копировать JSON', self.custom_tree_view_copy_json)
