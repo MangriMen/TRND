@@ -12,5 +12,33 @@ QMenu {{
 
 QProgressBar {{
   color: {QTMATERIAL_SECONDARYTEXTCOLOR};
+}}
+
+QProgressBar,
+QProgressBar::chunk {{
   border-radius: 4px;
+}}
+
+QScrollBar:vertical {{
+  background-color: {QTMATERIAL_SECONDARYCOLOR};
+  width: 13px;
+  padding-left: 5px;
+}}
+
+QScrollBar:horizontal {{
+  background-color: {QTMATERIAL_SECONDARYCOLOR};
+  height: 15px;
+  padding-top: 7px;
+}}
+
+QScrollBar::handle:vertical,
+QScrollBar::handle:horizontal {{
+  border-radius: 4px;
+}}
+
+QScrollBar::add-page:vertical,
+QScrollBar::sub-page:vertical,
+QScrollBar::add-page:horizontal,
+QScrollBar::sub-page:horizontal {{
+  background: transparent;
 }}
