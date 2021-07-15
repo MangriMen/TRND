@@ -511,8 +511,6 @@ class MyWindow(QMainWindow):
     def custom_tree_view_context_menu(self, location):
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():
-            print(self.twRandom.model().itemFromIndex(index).background().color().name(QColor.HexArgb))
-            menu.addAction('Заменить')
             menu.addAction('Перегенерировать', lambda: self.custom_tree_view_replace_random(index))
             menu.addSeparator()
         menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
