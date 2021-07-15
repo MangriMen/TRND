@@ -24,7 +24,7 @@ def init_environ():
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
 
-    os.environ['VERSION_NOW'] = '0.13'
+    os.environ['VERSION_NOW'] = '0.14'
 
 
 def suppress_qt_warnings():
