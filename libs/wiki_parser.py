@@ -116,15 +116,15 @@ def get_data_from_wiki(worker_, dict_):
                     continue
                 weaponNameStr = weaponName.text.strip()
 
-                mods = page.find('div', class_=mainBlockClass).find('span', id=modsBlockId)
-                if mods is None:
+                modsTitle = page.find('div', class_=mainBlockClass).find('span', id=modsBlockId)
+                if modsTitle is None:
                     continue
 
                 if worker_.isRunning:
                     worker_.display_text.emit(firstLevelFormatStr % ('', a_.get('title')))
                 worker_.local_progress.emit(int(math.ceil(inner_counter / len(table_) * 100)))
 
-                modsTables = mods.findParent().find_next_sibling().findChild()
+                modsTables = modsTitle.findParent().find_next_sibling().findChild()
 
                 modsTablesHeaders = modsTables.find('div', class_=modsHeadersClass).findAll('a')
                 modsTablesData = modsTables.findAll('table')
