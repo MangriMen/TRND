@@ -25,6 +25,7 @@ def get_data_from_wiki(worker_, dict_):
     mainBlockClass = 'mw-parser-output'
     weaponNameBlockClass = 'firstHeading'
     modsBlockId = 'Моды'
+    modsHeadersClass = 'wds-tabs__wrapper'
     compatibilityTabTitle = 'Совместимость'
     conflictsTabTitle = 'Конфликтующие моды'
 
@@ -71,7 +72,7 @@ def get_data_from_wiki(worker_, dict_):
                 break
             header_counter += 1
 
-            header = header_.findAll('span')[1].text
+            header = header_.findAll('span')[1].text.strip()
             if worker_.isRunning:
                 worker_.display_text.emit(header)
             worker_.global_progress.emit(int(math.ceil(header_counter / len(headers_) * 100)))
@@ -110,9 +111,10 @@ def get_data_from_wiki(worker_, dict_):
 
                 page = BeautifulSoup(r.text, 'lxml')
 
-                weapon_name = page.find('h1', class_=weaponNameBlockClass)
-                if weapon_name is None:
+                weaponName = page.find('h1', id=weaponNameBlockClass)
+                if weaponName is None:
                     continue
+                weaponNameStr = weaponName.text.strip()
 
                 mods = page.find('div', class_=mainBlockClass).find('span', id=modsBlockId)
                 if mods is None:
@@ -122,65 +124,69 @@ def get_data_from_wiki(worker_, dict_):
                     worker_.display_text.emit(firstLevelFormatStr % ('', a_.get('title')))
                 worker_.local_progress.emit(int(math.ceil(inner_counter / len(table_) * 100)))
 
-                mods_tables = mods.findParent().find_next_sibling().findChild().findAll('div')
+                modsTables = mods.findParent().find_next_sibling().findChild()
 
-                for mod_tab in mods_tables:
+                modsTablesHeaders = modsTables.find('div', class_=modsHeadersClass).findAll('a')
+                modsTablesData = modsTables.findAll('table')
+
+                for modHeader, modTab in zip(modsTablesHeaders, modsTablesData):
                     if not worker_.isRunning:
                         return None
 
-                    category = mod_tab.get('title').capitalize()
+                    category = modHeader.text.capitalize().strip()
                     if category == compatibilityTabTitle:
                         continue
                     elif category == conflictsTabTitle:
-                        outDict[modsConflicts][weapon_name.text] = list()
+                        outDict[modsConflicts][weaponNameStr] = list()
 
                     if worker_.isRunning:
                         worker_.display_text.emit(secondLevelFormatStr % ('', category))
 
-                    mod_table = mod_tab.findAll('tr')
-                    if mod_table is None:
+                    modTable = modTab.findAll('tr')
+                    if modTable is None:
                         continue
 
-                    for mod_tr in mod_table:
+                    for modTr in modTable:
                         if not worker_.isRunning:
                             return None
 
-                        if mod_tr is None:
+                        if modTr is None:
                             continue
 
-                        mod_a = mod_tr.find('a', class_='')
-                        if mod_a is None:
+                        modLink = modTr.find('a', class_='')
+                        if modLink is None:
                             continue
+                        modLinkStr = modLink.text.strip()
 
                         if worker_.isRunning:
-                            worker_.display_text.emit(thirdLevelFormatStr % ('', mod_a.text))
+                            worker_.display_text.emit(thirdLevelFormatStr % ('', modLinkStr))
 
                         if category == conflictsTabTitle:
-                            outDict[modsConflicts][weapon_name.text].append(mod_a.text)
+                            outDict[modsConflicts][weaponNameStr].append(modLinkStr)
                         elif dict_['type'] == weapons:
-                            if weapon_name.text not in outDict[dict_['type']]:
-                                outDict[dict_['type']][weapon_name.text] = dict()
+                            if weaponNameStr not in outDict[dict_['type']]:
+                                outDict[dict_['type']][weaponNameStr] = dict()
 
-                            if category not in outDict[dict_['type']][weapon_name.text]:
-                                outDict[dict_['type']][weapon_name.text][category] = list()
+                            if category not in outDict[dict_['type']][weaponNameStr]:
+                                outDict[dict_['type']][weaponNameStr][category] = list()
 
-                            if mod_a.text not in outDict[dict_['type']][weapon_name.text][category]:
-                                outDict[dict_['type']][weapon_name.text][category].append(mod_a.text)
+                            if modLinkStr not in outDict[dict_['type']][weaponNameStr][category]:
+                                outDict[dict_['type']][weaponNameStr][category].append(modLinkStr)
                         elif dict_['type'] == mods:
-                            if weapon_name.text not in outDict[dict_['type']]:
-                                outDict[dict_['type']][weapon_name.text] = list()
+                            if weaponNameStr not in outDict[dict_['type']]:
+                                outDict[dict_['type']][weaponNameStr] = list()
 
-                            if mod_a.text not in outDict[dict_['type']][weapon_name.text]:
-                                outDict[dict_['type']][weapon_name.text].append(mod_a.text)
+                            if modLinkStr not in outDict[dict_['type']][weaponNameStr]:
+                                outDict[dict_['type']][weaponNameStr].append(modLinkStr)
 
     elapsed = time.perf_counter() - downloadTime
-    elapsed_str = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))
-    worker_.display_text.emit(elapsed_str)
+    elapsedStr = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))
+    worker_.display_text.emit(elapsedStr)
 
-    now_date = datetime.datetime.now().isoformat()
+    currentDateIso = datetime.datetime.now().isoformat()
     if dict_['type'] == weapons:
-        outDict['weaponsLastUpdate'] = now_date
+        outDict['weaponsLastUpdate'] = currentDateIso
     elif dict_['type'] == mods:
-        outDict['modsLastUpdate'] = now_date
+        outDict['modsLastUpdate'] = currentDateIso
 
     return outDict
