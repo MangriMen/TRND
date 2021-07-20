@@ -427,10 +427,10 @@ class MyWindow(QMainWindow):
         self.progressTotal.setTextVisible(True)
 
         if type_ == 'weapons':
-            self.btnUpdateWeapons.setText("Cancel")
+            self.btnUpdateWeapons.setText("Отмена")
             self.btnUpdateMods.setEnabled(False)
         elif type_ == 'mods':
-            self.btnUpdateMods.setText("Cancel")
+            self.btnUpdateMods.setText("Отмена")
             self.btnUpdateWeapons.setEnabled(False)
 
         self.data_thread = ThreadController(get_data, type=type_, is_debug=False, jsonData=self.jsonData)
