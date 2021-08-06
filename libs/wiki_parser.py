@@ -37,8 +37,8 @@ def get_data_from_wiki(worker_, dict_):
 
     downloadTime = time.perf_counter()
     if dict_['type'] == weapons or dict_['type'] == mods:
-        min_f = 0
-        min_s = 0
+        minF = 0
+        minS = 0
 
         if dict_['type'] == weapons:
             maxF = 9  # 9
@@ -51,6 +51,9 @@ def get_data_from_wiki(worker_, dict_):
         else:
             return
 
+        maxF = int(maxF)
+        maxS = int(maxS)
+
         try:
             html = requests.get(queryPage)
             html.raise_for_status()
@@ -61,21 +64,19 @@ def get_data_from_wiki(worker_, dict_):
         soup = BeautifulSoup(html.text, 'lxml')
         headers_ = soup.find('div', class_=mainBlockClass).findAll('h3')
 
-        header_counter = 0
-        for header_ in headers_:
+        del headers_[:minF]
+        del headers_[(maxF - minF):]
+
+        for header_counter, header_ in enumerate(headers_, start=1):
             if not worker_.isRunning:
                 return None
-
-            if header_counter < min_f:
-                continue
-            elif header_counter >= maxF:
-                break
-            header_counter += 1
 
             header = header_.findAll('span')[1].text.strip()
             if worker_.isRunning:
                 worker_.display_text.emit(header)
-            worker_.global_progress.emit(int(math.ceil(header_counter / len(headers_) * 100)))
+
+            globalProgressPercent = int(math.ceil((header_counter - 1) / len(headers_) * 100))
+            globalProgressNextPercent = int(math.ceil(header_counter / len(headers_) * 100))
 
             table_ = header_.find_next_sibling()
             if table_.name == 'h4':
@@ -83,16 +84,12 @@ def get_data_from_wiki(worker_, dict_):
             else:
                 table_ = table_.tbody.findAll('tr')
 
-            inner_counter = 0
-            for tr_ in table_:
+            del table_[:minS]
+            del table_[(maxS-minS):]
+
+            for tr_counter, tr_ in enumerate(table_):
                 if not worker_.isRunning:
                     return None
-
-                if inner_counter < min_s:
-                    continue
-                elif inner_counter >= maxS:
-                    break
-                inner_counter += 1
 
                 td_ = tr_.find('td')
                 if td_ is None:
@@ -122,7 +119,11 @@ def get_data_from_wiki(worker_, dict_):
 
                 if worker_.isRunning:
                     worker_.display_text.emit(firstLevelFormatStr % ('', a_.get('title')))
-                worker_.local_progress.emit(int(math.ceil(inner_counter / len(table_) * 100)))
+
+                localProgressPercent = int(math.ceil(tr_counter / len(table_) * 100))
+                worker_.local_progress.emit(localProgressPercent)
+                worker_.global_progress.emit(globalProgressPercent + (
+                        (globalProgressNextPercent - globalProgressPercent) * (localProgressPercent / 100)))
 
                 modsTables = modsTitle.findParent().find_next_sibling().findChild()
 
