@@ -11,6 +11,7 @@ from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
 from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot
 from PyQt5.QtGui import QColor
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel
+from PyQt5 import QtWinExtras
 
 from libs import utils
 from libs.qt_extends import JsonModel, ThreadController, showDetailedError
@@ -30,7 +31,6 @@ class MyWindow(QMainWindow):
         self.update_thread = None
         self.data_thread = None
         self.jsonData = None
-
         self.isUpdateQuestion = True
 
         self.treeModel = JsonModel()
@@ -76,10 +76,20 @@ class MyWindow(QMainWindow):
         self.twMain.setModel(self.treeModel)
         self.twRandom.setItemsExpandable(False)
         self.twRandom.customContextMenuRequested.connect(lambda location: self.custom_tree_view_context_menu(location))
-
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabWidgetMain.setCurrentWidget(self.tabMain)
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
+
+        if QtWinExtras.QtWin.isCompositionEnabled():
+            QtWinExtras.QtWin.extendFrameIntoClientArea(self, 0, 0, 0, 0)
+        else:
+            QtWinExtras.QtWin.resetExtendedFrame(self)
+
+        self.taskbarBtn = QtWinExtras.QWinTaskbarButton(self)
+        self.taskbarProgress = QtWinExtras.QWinTaskbarProgress(self)
+        self.taskbarProgress = self.taskbarBtn.progress()
+        self.taskbarProgress.setMinimum(-1)
+        self.taskbarBtn.setWindow(self.windowHandle())
 
         self.updateTimer.start(300000)
         self.update_json()
@@ -413,6 +423,7 @@ class MyWindow(QMainWindow):
             main.progressTotal.setValue(0)
             main.lblProgress.setText("")
             main.update_json()
+            main.taskbarProgress.hide()
 
         if self.data_thread and self.data_thread.isRunning:
             self.data_thread.stop()
@@ -440,9 +451,12 @@ class MyWindow(QMainWindow):
 
         self.data_thread.worker.local_progress.connect(lambda value: self.progressNow.setValue(value))
         self.data_thread.worker.global_progress.connect(lambda value: self.progressTotal.setValue(value))
+        self.data_thread.worker.global_progress.connect(lambda value: self.taskbarProgress.setValue(value))
         self.data_thread.worker.display_text.connect(lambda value: self.teUpdateInfo.append(value))
         self.data_thread.worker.display_text.connect(lambda value: self.lblProgress.setText(value.strip()))
         self.data_thread.thread.finished.connect(lambda: finish(self))
+
+        self.taskbarProgress.show()
 
         self.data_thread.start()
 
