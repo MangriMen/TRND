@@ -9,8 +9,8 @@ import requests
 from PyQt5 import uic
 from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
 from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot
-from PyQt5.QtGui import QColor
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel
+from PyQt5.QtGui import QColor, QFont
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar
 from PyQt5 import QtWinExtras
 
 from libs import utils
@@ -336,12 +336,17 @@ class MyWindow(QMainWindow):
                 else:
                     dl = 0
                     for data in downloaded_file_.iter_content(chunk_size=4096):
+                        if not worker_.isRunning:
+                            break
                         dl += len(data)
                         file.write(data)
                         worker_.progress.emit(dl)
 
         @pyqtSlot()
         def stop_process():
+            self.taskbarProgress.hide()
+            if dlg.wasCanceled():
+                return
             subprocess.Popen([tempfile.gettempdir() + '\\TRND_update.exe', '/VERYSILENT'])
             self.close()
             sys.exit()
@@ -349,7 +354,7 @@ class MyWindow(QMainWindow):
         response = utils.get_update_info(self.githubLinkLastRelease + '/latest')
 
         if not response['result']:
-            self.show_detailed_error(
+            showDetailedError(
                 'Ошибка обновления: ' + response['error'],
                 'Невозможно получить данные для обновления.',
                 response['error_msg']
@@ -364,7 +369,7 @@ class MyWindow(QMainWindow):
             QMessageBox.information(self, 'Обновление', 'Установлена последняя версия.', QMessageBox.Ok)
             return
 
-        self.btnSelfUpdate.setEnabled(False)
+        self.btnUpdateApp.setEnabled(False)
 
         download_link = ''
         for asset in response['data']['assets']:
@@ -381,26 +386,43 @@ class MyWindow(QMainWindow):
         total_length = downloaded_file.headers.get('content-length')
         total_length_display = str(int(int(total_length) / 1024)) + ' КБ'
 
-        dlg = QProgressDialog('', 'Отмена', 0, int(total_length), self, Qt.WindowTitleHint)
+        dlg = QProgressDialog('', 'Отмена', 0, int(total_length), self,
+                              (Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.Dialog))
         dlg.setWindowTitle('Загрузка инсталлятора')
 
+        font_ = QFont('Roboto', 10)
+        font_.setBold(True)
         lblText = QLabel()
+        lblText.setFont(font_)
         lblText.setAlignment(Qt.AlignCenter)
         dlg.setLabel(lblText)
+
+        progressUpdate = QProgressBar()
+        progressUpdate.setMaximum(int(total_length))
+        progressUpdate.setTextVisible(False)
+        dlg.setBar(progressUpdate)
+        dlg.setAutoReset(False)
 
         btnCancel = QPushButton()
         dlg.setCancelButton(btnCancel)
         btnCancel.hide()
+
+        dlg.setFixedSize(dlg.width()*1.5, dlg.height())
+        dlg.canceled.connect(lambda: self.update_thread.stop())
+
         dlg.show()
 
         self.update_thread = ThreadController(get_file, downloaded_file_=downloaded_file, total_length_=total_length)
         self.update_thread.worker.addSignal('progress', [int])
 
         self.update_thread.worker.progress.connect(lambda value: dlg.setValue(value))
+        self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
+            (int(value) / int(total_length))*100))
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
                                                                                  total_length_display))
         self.update_thread.thread.finished.connect(stop_process)
 
+        self.taskbarProgress.show()
         self.update_thread.thread.start()
 
     @pyqtSlot(str)
@@ -457,7 +479,6 @@ class MyWindow(QMainWindow):
         self.data_thread.thread.finished.connect(lambda: finish(self))
 
         self.taskbarProgress.show()
-
         self.data_thread.start()
 
     @pyqtSlot()
