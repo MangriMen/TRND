@@ -413,14 +413,14 @@ class MyWindow(QMainWindow):
         btnCancel.hide()
 
         dlg.setFixedSize(dlg.width()*1.5, dlg.height())
-        dlg.canceled.connect(lambda: self.update_thread.stop())
+        dlg.canceled.connect(self.update_thread.stop)
 
         dlg.show()
 
         self.update_thread = ThreadController(get_file, downloaded_file_=downloaded_file, total_length_=total_length)
         self.update_thread.worker.addSignal('progress', [int])
 
-        self.update_thread.worker.progress.connect(lambda value: dlg.setValue(value))
+        self.update_thread.worker.progress.connect(dlg.setValue)
         self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
             (int(value) / int(total_length))*100))
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
