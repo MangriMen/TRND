@@ -577,6 +577,6 @@ class MyWindow(QMainWindow):
             menu.addAction('Перегенерировать', lambda: self.replace_random_and_check_conflicts(index))
             menu.addSeparator()
         menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
-        menu.addAction('Копировать JSON', self.custom_tree_view_copy_json)
-        menu.addAction('Вставить JSON', lambda: self.custom_tree_view_paste_json(QApplication.clipboard().text()))
+        menu.addAction('Копировать оружие', self.custom_tree_view_copy_json)
+        menu.addAction('Вставить оружие', lambda: self.custom_tree_view_paste_json(QApplication.clipboard().text()))
         menu.popup(self.twRandom.mapToGlobal(location))
