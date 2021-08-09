@@ -33,7 +33,8 @@ class MyWindow(QMainWindow):
         self.jsonData = None
         self.isUpdateQuestion = True
 
-        self.treeModel = JsonModel()
+        self.twMainModel = JsonModel()
+        self.twRandomModel = JsonModel()
         self.updateTimer = QTimer()
         self.updateTimeoutTimer = QTimeLine()
 
@@ -73,7 +74,8 @@ class MyWindow(QMainWindow):
             self.btnUpdateApp.accessibleName()
         ))
 
-        self.twMain.setModel(self.treeModel)
+        self.twMain.setModel(self.twMainModel)
+        self.twRandom.setModel(self.twRandomModel)
         self.twRandom.setItemsExpandable(False)
         self.twRandom.customContextMenuRequested.connect(lambda location: self.custom_tree_view_context_menu(location))
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
@@ -130,22 +132,22 @@ class MyWindow(QMainWindow):
 
         utils.dump_data(self.jsonData)
 
-        self.treeModel.fillModel(self.jsonData['weapons'])
-        self.twMain.setModel(self.treeModel)
-        self.twMain.setCurrentIndex(self.treeModel.createIndex(0, 0))
+        self.twMainModel.fillModel(self.jsonData['weapons'])
+        self.twMain.setModel(self.twMainModel)
+        self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
 
     @pyqtSlot(str)
     def find_and_display_weapons(self, query):
         if query == '':
-            self.twMain.setModel(self.treeModel)
+            self.twMain.setModel(self.twMainModel)
             return
 
-        if self.twMain.model().rowCount == 0:
+        if self.twMainModel.rowCount == 0:
             return
 
         searchModel = JsonModel()
 
-        for item in self.treeModel.findItems(query, Qt.MatchContains):
+        for item in self.twMainModel.findItems(query, Qt.MatchContains):
             item_clone = item.clone()
             searchModel.appendRow(item_clone)
             JsonModel.copyItemWithChildren(item_clone, item)
@@ -170,15 +172,15 @@ class MyWindow(QMainWindow):
 
     @pyqtSlot()
     def random_weapon(self):
-        if self.twMain.model().rowCount() == 0:
+        if self.twMainModel.rowCount() == 0:
             return
 
         if len(self.twMain.selectedIndexes()) == 0:
-            self.twMain.setCurrentIndex(self.twMain.model().createIndex(0, 0))
+            self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
 
         if self.chboxIsRandomWeapon.isChecked():
-            index = random.randrange(0, self.twMain.model().root.rowCount())
-            self.twMain.setCurrentIndex(self.twMain.model().createIndex(index, 0))
+            index = random.randrange(0, self.twMainModel.root.rowCount())
+            self.twMain.setCurrentIndex(self.twMainModel.createIndex(index, 0))
 
         name = self.twMain.selectedIndexes()[0]
         if not self.chboxIsRandomWeapon.isChecked():
@@ -188,10 +190,7 @@ class MyWindow(QMainWindow):
 
         self.create_random_weapon(randomJson := dict(), name, self.jsonData['weapons'][name])
 
-        outModel = JsonModel()
-        outModel.fillModel(randomJson)
-
-        self.twRandom.setModel(outModel)
+        self.twRandomModel.fillModel(randomJson)
         self.twRandom.expandAll()
 
         self.resolve_mod_conflicts()
@@ -215,7 +214,7 @@ class MyWindow(QMainWindow):
                             redBackgroundColor = QColor(140, 42, 42)
                             isConflict = False
                             for conflict in self.jsonData['modsConflicts'][child_.text()]:
-                                conflictItems = self.twRandom.model().findItems(
+                                conflictItems = self.twRandomModel.findItems(
                                     conflict,
                                     (Qt.MatchContains | Qt.MatchRecursive)
                                 )
@@ -227,10 +226,10 @@ class MyWindow(QMainWindow):
                                 child_.setBackground(redBackgroundColor)
                                 conflicts_.append(child_)
 
-        if self.twRandom.model():
+        if self.twRandomModel and self.twRandomModel.rowCount():
             isQuestion = True
             while True:
-                rootFirstChild_ = self.twRandom.model().invisibleRootItem().child(0, 0)
+                rootFirstChild_ = self.twRandomModel.invisibleRootItem().child(0, 0)
                 JsonModel.modelToJson(rootFirstChild_, weaponJson := dict(), rootFirstChild_.text())
                 get_last_children(rootFirstChild_, weaponJson[rootFirstChild_.text()], conflicts := list())
 
@@ -249,7 +248,7 @@ class MyWindow(QMainWindow):
                     for conflict_ in conflicts:
                         conflict_.setBackground(QColor(0, 0, 0, 0))
                     randomConflict = random.choice(conflicts)
-                    conflictIndex = self.twRandom.model().indexFromItem(randomConflict)
+                    conflictIndex = self.twRandomModel.indexFromItem(randomConflict)
                     if randomConflict.hasChildren():
                         conflictIndex = conflictIndex.parent()
                     self.custom_tree_view_replace_random(conflictIndex)
@@ -481,17 +480,22 @@ class MyWindow(QMainWindow):
         self.taskbarProgress.show()
         self.data_thread.start()
 
+    @pyqtSlot(object)
+    def replace_random_and_check_conflicts(self, index_):
+        self.custom_tree_view_replace_random(index_)
+        self.resolve_mod_conflicts()
+
     @pyqtSlot()
     def custom_tree_view_copy_text(self):
-        if self.twRandom.model():
-            twRandomRoot = self.twRandom.model().invisibleRootItem()
+        if self.twRandomModel:
+            twRandomRoot = self.twRandomModel.invisibleRootItem()
             out = JsonModel.modelToText(twRandomRoot)
             QApplication.clipboard().setText(out.rstrip())
 
     @pyqtSlot()
     def custom_tree_view_copy_json(self):
-        if self.twRandom.model():
-            twRandomRoot = self.twRandom.model().invisibleRootItem()
+        if self.twRandomModel:
+            twRandomRoot = self.twRandomModel.invisibleRootItem()
             JsonModel.modelToJson(twRandomRoot.child(0, 0), out := dict(), twRandomRoot.child(0, 0).text())
             out = utils.get_json_dump(out)
             if out is not None:
@@ -499,67 +503,72 @@ class MyWindow(QMainWindow):
 
     @pyqtSlot(str)
     def custom_tree_view_paste_json(self, json_):
-        if not self.twRandom.model():
+        if not self.twRandomModel:
             self.twRandom.setModel(JsonModel())
         json_ = utils.get_json_loads(json_)
         if json_ is not None:
-            self.twRandom.model().fillModel(json_)
+            self.twRandomModel.fillModel(json_)
             self.twRandom.expandAll()
             self.resolve_mod_conflicts()
 
     @pyqtSlot(object)
     def custom_tree_view_replace_random(self, index_):
-        twRandomModel = self.twRandom.model()
-
-        twRandomFirstChild = self.twRandom.model().invisibleRootItem().child(0, 0)
-        clickedRowText = twRandomModel.itemFromIndex(index_).text()
+        twRandomFirstChild = self.twRandomModel.invisibleRootItem().child(0, 0)
+        clickedRowText = self.twRandomModel.itemFromIndex(index_).text()
 
         pathToRootList = list()
-        while (item := twRandomModel.itemFromIndex(index_)) is not None and (index_ := index_.parent()) is not None:
+        while (item := self.twRandomModel.itemFromIndex(index_)) is not None\
+                and (index_ := index_.parent()) is not None:
             pathToRootList.append(item.text())
         pathToRootList.reverse()
 
         out = dict()
-        if len(pathToRootList) > 1:
-            JsonModel.modelToJson(twRandomFirstChild, out, twRandomFirstChild.text())
-        outTemp = out
-
         json_ = self.jsonData['weapons'].copy()
         jsonTemp = json_
 
-        lastIndexOut = 0
-        for lastIndexOut in range(0, len(pathToRootList)):
-            path_ = pathToRootList[lastIndexOut]
-            if (path_ == clickedRowText) or isinstance(outTemp[path_], list):
-                break
-            outTemp = outTemp[path_]
-
-        lastIndexJson = 0
-        for lastIndexJson in range(0, len(pathToRootList)):
-            path_ = pathToRootList[lastIndexJson]
-            if (path_ == clickedRowText) or isinstance(jsonTemp[path_], list):
-                break
-            jsonTemp = jsonTemp[path_]
-
-        outKey = pathToRootList[lastIndexOut]
-        if outKey in jsonTemp:
-            jsonTemp = jsonTemp[pathToRootList[lastIndexJson]]
+        if len(pathToRootList) == 1:
+            outTemp = out
+            outKey = clickedRowText
+            jsonTemp = jsonTemp[clickedRowText]
         else:
-            jsonTemp = self.jsonData['mods'][pathToRootList[lastIndexOut]]
+            JsonModel.modelToJson(twRandomFirstChild, out, twRandomFirstChild.text())
+            outTemp = out
+            if len(pathToRootList) == 2:
+                outTemp = outTemp[pathToRootList[0]]
+                outKey = clickedRowText
+                jsonTemp = jsonTemp[pathToRootList[0]][clickedRowText]
+            else:
+                def scanDict(scanList_, scanDict_):
+                    lastIndex_ = 0
+                    for lastIndex_ in range(len(scanList_)):
+                        path_ = pathToRootList[lastIndex_]
+                        nextIndex = lastIndex_ + 1
+                        if (nextIndex < len(scanList_)) and (pathToRootList[nextIndex] == clickedRowText):
+                            break
+                        if isinstance(scanDict_[path_], list):
+                            break
+                        scanDict_ = scanDict_[path_]
+                    return scanDict_, lastIndex_
+
+                outTemp, lastIndexOut = scanDict(pathToRootList, outTemp)
+                outKey = pathToRootList[lastIndexOut]
+                jsonTemp, lastIndexJson = scanDict(pathToRootList, jsonTemp)
+
+                if outKey in jsonTemp:
+                    jsonTemp = jsonTemp[pathToRootList[lastIndexJson]]
+                else:
+                    jsonTemp = self.jsonData['mods'][pathToRootList[lastIndexOut]]
 
         self.create_random_weapon(outTemp, outKey, jsonTemp)
 
-        self.twRandom.model().fillModel(out)
+        self.twRandomModel.fillModel(out)
         self.twRandom.expandAll()
 
     @pyqtSlot()
     def custom_tree_view_context_menu(self, location):
-        def replace_random_and_check_conflicts():
-            self.custom_tree_view_replace_random(index)
-            self.resolve_mod_conflicts()
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():
-            menu.addAction('Перегенерировать', replace_random_and_check_conflicts)
+            menu.addAction('Перегенерировать', lambda: self.replace_random_and_check_conflicts(index))
             menu.addSeparator()
         menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
         menu.addAction('Копировать JSON', self.custom_tree_view_copy_json)
