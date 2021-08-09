@@ -54,14 +54,13 @@ def date_to_str(isoDate, format_str):
     if isoDate == 'unknown':
         return 'неизвестно'
 
-    out = ''
     try:
         out = datetime.datetime.fromisoformat(isoDate).strftime(format_str)
     except ValueError:
         isoDate = datetime.datetime.now().isoformat()
         out = date_to_str(isoDate, format_str)
-    finally:
-        return out
+
+    return out
 
 
 def thread_print(caller):
