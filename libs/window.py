@@ -8,7 +8,7 @@ import tempfile
 import requests
 from PyQt5 import uic
 from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
-from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot
+from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot, QPoint
 from PyQt5.QtGui import QColor, QFont
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar
 from PyQt5 import QtWinExtras
@@ -77,7 +77,7 @@ class MyWindow(QMainWindow):
         self.twMain.setModel(self.twMainModel)
         self.twRandom.setModel(self.twRandomModel)
         self.twRandom.setItemsExpandable(False)
-        self.twRandom.customContextMenuRequested.connect(lambda location: self.custom_tree_view_context_menu(location))
+        self.twRandom.customContextMenuRequested.connect(self.custom_tree_view_context_menu)
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tabWidgetMain.setCurrentWidget(self.tabMain)
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
@@ -159,7 +159,8 @@ class MyWindow(QMainWindow):
         randomJson_[key_] = dict()
         if json_ is None:
             return
-        elif isinstance(json_, dict):
+
+        if isinstance(json_, dict):
             for key, val in sorted(json_.items()):
                 self.create_random_weapon(randomJson_[key_], key, val)
         elif isinstance(json_, (list, tuple)):
@@ -172,6 +173,8 @@ class MyWindow(QMainWindow):
             else:
                 randomJson_[key_] = list()
                 randomJson_[key_].append(rand_str)
+        else:
+            return
 
     @pyqtSlot()
     def random_weapon(self):
@@ -410,14 +413,14 @@ class MyWindow(QMainWindow):
         btnCancel.hide()
 
         dlg.setFixedSize(dlg.width()*1.5, dlg.height())
-        dlg.canceled.connect(lambda: self.update_thread.stop())
+        dlg.canceled.connect(self.update_thread.stop)
 
         dlg.show()
 
         self.update_thread = ThreadController(get_file, downloaded_file_=downloaded_file, total_length_=total_length)
         self.update_thread.worker.addSignal('progress', [int])
 
-        self.update_thread.worker.progress.connect(lambda value: dlg.setValue(value))
+        self.update_thread.worker.progress.connect(dlg.setValue)
         self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
             (int(value) / int(total_length))*100))
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
@@ -473,10 +476,10 @@ class MyWindow(QMainWindow):
         self.data_thread.worker.addSignal('global_progress', [int])
         self.data_thread.worker.addSignal('display_text', [str])
 
-        self.data_thread.worker.local_progress.connect(lambda value: self.progressNow.setValue(value))
-        self.data_thread.worker.global_progress.connect(lambda value: self.progressTotal.setValue(value))
-        self.data_thread.worker.global_progress.connect(lambda value: self.taskbarProgress.setValue(value))
-        self.data_thread.worker.display_text.connect(lambda value: self.teUpdateInfo.append(value))
+        self.data_thread.worker.local_progress.connect(self.progressNow.setValue)
+        self.data_thread.worker.global_progress.connect(self.progressTotal.setValue)
+        self.data_thread.worker.global_progress.connect(self.taskbarProgress.setValue)
+        self.data_thread.worker.display_text.connect(self.teUpdateInfo.append)
         self.data_thread.worker.display_text.connect(lambda value: self.lblProgress.setText(value.strip()))
         self.data_thread.thread.finished.connect(lambda: finish(self))
 
@@ -572,7 +575,7 @@ class MyWindow(QMainWindow):
         self.twRandomModel.fillModel(out)
         self.twRandom.expandAll()
 
-    @pyqtSlot()
+    @pyqtSlot(QPoint)
     def custom_tree_view_context_menu(self, location):
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():

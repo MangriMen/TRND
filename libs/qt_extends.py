@@ -31,7 +31,8 @@ class JsonModel(QStandardItemModel):
     def __fillFromJson(self, row, json_):
         if json_ is None:
             return
-        elif isinstance(json_, dict):
+
+        if isinstance(json_, dict):
             for key, val in sorted(json_.items()):
                 newItem = StandardItem(key)
                 row.appendRow(newItem)
@@ -163,4 +164,3 @@ def showDetailedError(title, text, detailedText):
     detailedMessage.setDetailedText(detailedText)
     detailedMessage.setDefaultButton(QMessageBox.Ok)
     detailedMessage.show()
-
