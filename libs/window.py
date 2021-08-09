@@ -481,6 +481,11 @@ class MyWindow(QMainWindow):
         self.data_thread.start()
 
     @pyqtSlot(object)
+    def custom_tree_view_copy_row(self, index_):
+        if self.twRandomModel:
+            QApplication.clipboard().setText(self.twRandomModel.itemFromIndex(index_).text())
+
+    @pyqtSlot(object)
     def replace_random_and_check_conflicts(self, index_):
         self.custom_tree_view_replace_random(index_)
         self.resolve_mod_conflicts()
@@ -568,6 +573,7 @@ class MyWindow(QMainWindow):
     def custom_tree_view_context_menu(self, location):
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():
+            menu.addAction('Копировать', lambda: self.custom_tree_view_copy_row(index))
             menu.addAction('Перегенерировать', lambda: self.replace_random_and_check_conflicts(index))
             menu.addSeparator()
         menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
