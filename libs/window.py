@@ -155,7 +155,7 @@ class MyWindow(QMainWindow):
         self.twMain.setModel(searchModel)
 
     @pyqtSlot()
-    def create_random_weapon(self, randomJson_, key_, json_):
+    def create_random_weapon(self, randomJson_, key_, json_, isEmpty_=False):
         randomJson_[key_] = dict()
         if json_ is None:
             return
@@ -163,9 +163,12 @@ class MyWindow(QMainWindow):
             for key, val in sorted(json_.items()):
                 self.create_random_weapon(randomJson_[key_], key, val)
         elif isinstance(json_, (list, tuple)):
-            rand_str = str(random.choice(json_))
+            variantArray = json_.copy()
+            if isEmpty_:
+                variantArray.append('Пусто')
+            rand_str = str(random.choice(variantArray))
             if rand_str in self.jsonData['mods']:
-                self.create_random_weapon(randomJson_[key_], rand_str, self.jsonData['mods'][rand_str])
+                self.create_random_weapon(randomJson_[key_], rand_str, self.jsonData['mods'][rand_str], True)
             else:
                 randomJson_[key_] = list()
                 randomJson_[key_].append(rand_str)
@@ -564,7 +567,7 @@ class MyWindow(QMainWindow):
                 else:
                     jsonTemp = self.jsonData['mods'][pathToRootList[lastIndexOut]]
 
-        self.create_random_weapon(outTemp, outKey, jsonTemp)
+        self.create_random_weapon(outTemp, outKey, jsonTemp, (len(pathToRootList) > 3))
 
         self.twRandomModel.fillModel(out)
         self.twRandom.expandAll()
