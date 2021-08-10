@@ -3,6 +3,7 @@ import platform
 import sys
 
 from PyQt5 import QtGui
+from PyQt5.QtCore import QTranslator
 from PyQt5.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
@@ -24,7 +25,7 @@ def init_environ():
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
 
-    os.environ['VERSION_NOW'] = '0.15'
+    os.environ['VERSION_NOW'] = '0.16'
 
 
 def suppress_qt_warnings():
@@ -46,6 +47,11 @@ def main():
     init_environ()
 
     app = QApplication(sys.argv)
+
+    translator = QTranslator(app)
+    translator.load("data/qtbase_ru.qm")
+
+    app.installTranslator(translator)
     apply_theme(app)
 
     window = MyWindow()
