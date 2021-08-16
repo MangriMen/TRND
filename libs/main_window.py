@@ -18,10 +18,10 @@ from libs.qt_extends import JsonModel, ThreadController, showDetailedError
 from libs.wiki_parser import get_data_from_wiki
 
 
-class MyWindow(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
-        super(MyWindow, self).__init__()
-        uic.loadUi('data/TRND.ui', self)
+        super(MainWindow, self).__init__()
+        uic.loadUi('data/main_window.ui', self)
 
         self.date_format_str = '%d.%m.%Y %X'
         self.updateCheckTimeout = 60
