@@ -7,7 +7,7 @@ from PyQt5.QtCore import QTranslator
 from PyQt5.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
-from libs.window import MyWindow
+from libs.main_window import MainWindow
 
 
 def init_environ():
@@ -54,7 +54,7 @@ def main():
     app.installTranslator(translator)
     apply_theme(app)
 
-    window = MyWindow()
+    window = MainWindow()
     window.show()
 
     sys.exit(app.exec_())
