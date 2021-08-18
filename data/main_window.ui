@@ -34,7 +34,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="documentMode">
        <bool>false</bool>
@@ -365,7 +365,7 @@
          <widget class="QLabel" name="lblTotal">
           <property name="font">
            <font>
-            <pointsize>8</pointsize>
+            <pointsize>10</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
@@ -390,7 +390,7 @@
             </property>
             <property name="font">
              <font>
-              <pointsize>8</pointsize>
+              <pointsize>10</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
