@@ -34,7 +34,7 @@
        <string/>
       </property>
       <property name="currentIndex">
-       <number>0</number>
+       <number>1</number>
       </property>
       <property name="documentMode">
        <bool>false</bool>
@@ -365,13 +365,13 @@
          <widget class="QLabel" name="lblTotal">
           <property name="font">
            <font>
-            <pointsize>8</pointsize>
+            <pointsize>11</pointsize>
             <weight>75</weight>
             <bold>true</bold>
            </font>
           </property>
           <property name="text">
-           <string>ВСЕГО:</string>
+           <string>Всего:</string>
           </property>
          </widget>
         </item>
@@ -390,7 +390,7 @@
             </property>
             <property name="font">
              <font>
-              <pointsize>8</pointsize>
+              <pointsize>11</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -405,7 +405,7 @@
              <number>1</number>
             </property>
             <property name="text">
-             <string>СЕЙЧАС:</string>
+             <string>Сейчас:</string>
             </property>
             <property name="textFormat">
              <enum>Qt::AutoText</enum>
@@ -425,7 +425,7 @@
            <widget class="QLabel" name="lblProgress">
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>12</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
@@ -689,19 +689,19 @@
             </property>
             <property name="minimumSize">
              <size>
-              <width>165</width>
+              <width>0</width>
               <height>0</height>
              </size>
             </property>
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>12</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
             </property>
             <property name="text">
-             <string>ВЕРСИЯ ПРИЛОЖЕНИЯ:</string>
+             <string>Версия:</string>
             </property>
            </widget>
           </item>
@@ -709,10 +709,13 @@
            <widget class="QLabel" name="lblVersion">
             <property name="font">
              <font>
-              <pointsize>10</pointsize>
+              <pointsize>12</pointsize>
               <weight>75</weight>
               <bold>true</bold>
              </font>
+            </property>
+            <property name="styleSheet">
+             <string notr="true"/>
             </property>
             <property name="text">
              <string>TextLabel</string>
