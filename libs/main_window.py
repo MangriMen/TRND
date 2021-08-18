@@ -295,16 +295,11 @@ class MainWindow(QMainWindow):
                     str(response['error_msg']))
             return
 
-        self.teUpdateChangeList.setText('Последняя версия: ' + response['data'][0]['tag_name'])
-        self.teUpdateChangeList.append('')
-        indent = '  '
+        changelogStr = ''
         for version in response['data']:
-            self.teUpdateChangeList.append(version['name'])
-            if version['body']:
-                body = indent + version['body'].replace('\n', '\n' + indent)
-            else:
-                body = indent + 'Description not found'
-            self.teUpdateChangeList.append(body)
+            body = version['body'] or '        Описание отсутствует'
+            changelogStr += ''.join(['### ', version['name'], '\n', body, '\n\n'])
+        self.teUpdateChangeList.setMarkdown(changelogStr)
 
         if float(response['data'][0]['tag_name']) > float(os.environ.get('VERSION_NOW')):
             self.tabWidgetMain.setTabText(2, self.tabUpdate.accessibleName() + ' (новая версия)')
