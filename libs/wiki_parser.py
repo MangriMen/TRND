@@ -63,7 +63,11 @@ def get_data_from_wiki(worker_, dict_):
     secondLevelFormatStr = '%8s%s'
     thirdLevelFormatStr = '%12s%s'
 
-    outDict = utils.validate_data(dict_['jsonData'])
+    outDict = dict_['jsonData'].copy()
+    outDict.pop(dict_['type'], None)
+    if dict_['type'] == mods:
+        outDict.pop(modsConflicts, None)
+    outDict = utils.validate_data(outDict)
 
     downloadTime = time.perf_counter()
     if dict_['type'] == weapons or dict_['type'] == mods:
