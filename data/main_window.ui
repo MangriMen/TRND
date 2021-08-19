@@ -22,7 +22,7 @@
   </property>
   <widget class="QWidget" name="centralwidget">
    <layout class="QGridLayout" name="gridLayout_3">
-    <item row="0" column="0">
+    <item row="0" column="1">
      <widget class="QTabWidget" name="tabWidgetMain">
       <property name="font">
        <font>
@@ -300,106 +300,116 @@
        <attribute name="title">
         <string>Оружие и моды</string>
        </attribute>
-       <layout class="QHBoxLayout" name="horizontalLayout_2">
-        <item>
-         <layout class="QVBoxLayout" name="PartsWeaponsLayout">
-          <property name="sizeConstraint">
-           <enum>QLayout::SetDefaultConstraint</enum>
+       <layout class="QGridLayout" name="gridLayout_7">
+        <item row="0" column="0">
+         <widget class="QSplitter" name="splitter_2">
+          <property name="orientation">
+           <enum>Qt::Horizontal</enum>
           </property>
-          <item>
-           <layout class="QHBoxLayout" name="PartsWeaponsFindLayout">
-            <property name="topMargin">
-             <number>0</number>
+          <property name="handleWidth">
+           <number>15</number>
+          </property>
+          <widget class="QWidget" name="verticalLayoutWidget">
+           <layout class="QVBoxLayout" name="PartsWeaponsLayout">
+            <property name="sizeConstraint">
+             <enum>QLayout::SetDefaultConstraint</enum>
             </property>
             <item>
-             <widget class="QLabel" name="lblPartsWeaponsFind">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>25</height>
-               </size>
+             <layout class="QHBoxLayout" name="PartsWeaponsFindLayout">
+              <property name="topMargin">
+               <number>0</number>
               </property>
-              <property name="font">
-               <font>
-                <pointsize>11</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>ПОИСК:</string>
-              </property>
-             </widget>
+              <item>
+               <widget class="QLabel" name="lblPartsWeaponsFind">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>11</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>ОРУЖИЕ:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="lePartsWeaponsFind">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QLineEdit" name="lePartsWeaponsFind">
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
-              </property>
+             <widget class="QTreeView" name="twPartsWeapons">
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
              </widget>
             </item>
            </layout>
-          </item>
-          <item>
-           <widget class="QTreeView" name="twPartsWeapons">
-            <attribute name="headerVisible">
-             <bool>false</bool>
-            </attribute>
-           </widget>
-          </item>
-         </layout>
-        </item>
-        <item>
-         <layout class="QVBoxLayout" name="PartsModsLayout">
-          <property name="leftMargin">
-           <number>0</number>
-          </property>
-          <item>
-           <layout class="QHBoxLayout" name="PartsModsFindLayout">
-            <property name="topMargin">
+          </widget>
+          <widget class="QWidget" name="verticalLayoutWidget_2">
+           <layout class="QVBoxLayout" name="PartsModsLayout">
+            <property name="leftMargin">
              <number>0</number>
             </property>
             <item>
-             <widget class="QLabel" name="lblPartsModsFind">
-              <property name="minimumSize">
-               <size>
-                <width>0</width>
-                <height>25</height>
-               </size>
+             <layout class="QHBoxLayout" name="PartsModsFindLayout">
+              <property name="topMargin">
+               <number>0</number>
               </property>
-              <property name="font">
-               <font>
-                <pointsize>11</pointsize>
-                <weight>75</weight>
-                <bold>true</bold>
-               </font>
-              </property>
-              <property name="text">
-               <string>ПОИСК:</string>
-              </property>
-             </widget>
+              <item>
+               <widget class="QLabel" name="lblPartsModsFind">
+                <property name="minimumSize">
+                 <size>
+                  <width>0</width>
+                  <height>25</height>
+                 </size>
+                </property>
+                <property name="font">
+                 <font>
+                  <pointsize>11</pointsize>
+                  <weight>75</weight>
+                  <bold>true</bold>
+                 </font>
+                </property>
+                <property name="text">
+                 <string>МОД:</string>
+                </property>
+               </widget>
+              </item>
+              <item>
+               <widget class="QLineEdit" name="lePartsModsFind">
+                <property name="font">
+                 <font>
+                  <pointsize>12</pointsize>
+                 </font>
+                </property>
+               </widget>
+              </item>
+             </layout>
             </item>
             <item>
-             <widget class="QLineEdit" name="lePartsModsFind">
-              <property name="font">
-               <font>
-                <pointsize>12</pointsize>
-               </font>
-              </property>
+             <widget class="QTreeView" name="twPartsMods">
+              <attribute name="headerVisible">
+               <bool>false</bool>
+              </attribute>
              </widget>
             </item>
            </layout>
-          </item>
-          <item>
-           <widget class="QTreeView" name="twPartsMods">
-            <attribute name="headerVisible">
-             <bool>false</bool>
-            </attribute>
-           </widget>
-          </item>
-         </layout>
+          </widget>
+         </widget>
         </item>
        </layout>
       </widget>
