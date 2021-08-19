@@ -1,10 +1,40 @@
 import datetime
+import json
 import math
 import time
 
 import requests
 from bs4 import BeautifulSoup
 from libs import utils
+
+
+def check_data_pages_update():
+    URL = 'https://escapefromtarkov.fandom.com/ru/api.php?'
+    PARAMS = {
+        "action": "query",
+        "prop": "revisions",
+        "titles": "Оружие|Оружейные части и моды",
+        "rvprop": "timestamp",
+        "formatversion": "2",
+        "format": "json"
+    }
+
+    try:
+        response = requests.get(url=URL, params=PARAMS)
+        response.raise_for_status()
+        response = response.json()
+    except requests.exceptions.RequestException:
+        response = None
+    except json.JSONDecodeError:
+        response = None
+
+    try:
+        lastPageEdit = dict()
+        lastPageEdit['weapons'] = response['query']['pages'][0]['revisions'][0]['timestamp']
+        lastPageEdit['mods'] = response['query']['pages'][1]['revisions'][0]['timestamp']
+    except KeyError:
+        lastPageEdit = ''
+    return lastPageEdit
 
 
 def get_data_from_wiki(worker_, dict_):
