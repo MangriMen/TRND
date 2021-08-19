@@ -362,7 +362,8 @@ class MainWindow(QMainWindow):
         self.teUpdateChangeList.setMarkdown(changelogStr)
 
         if float(response['data'][0]['tag_name']) > float(os.environ.get('VERSION_NOW')):
-            self.tabWidgetMain.setTabText(2, self.tabUpdate.accessibleName() + ' (новая версия)')
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName()
+                                          + '(новая версия)')
             if (sender == 'timer' and self.isUpdateQuestion) or self.tabWidgetMain.currentWidget() == self.tabUpdate:
                 if sender == 'timer':
                     message = 'Перейти на страницу обновления?'
@@ -380,7 +381,7 @@ class MainWindow(QMainWindow):
         else:
             if sender == 'button':
                 QMessageBox.information(self, 'Обновление', 'Установлена последняя версия.', QMessageBox.Ok)
-            self.tabWidgetMain.setTabText(2, self.tabUpdate.accessibleName())
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName())
 
     @pyqtSlot()
     def update_app(self):
