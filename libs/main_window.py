@@ -10,8 +10,9 @@ import requests
 from PyQt5 import uic
 from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
 from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot, QPoint
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar
+from PyQt5.QtGui import QColor, QFont, QStandardItemModel
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar, \
+    QTreeView
 from PyQt5 import QtWinExtras
 
 from libs import utils
@@ -38,6 +39,7 @@ class MainWindow(QMainWindow):
 
         self.twMainModel = JsonModel()
         self.twRandomModel = JsonModel()
+        self.twPartsModsModel = JsonModel()
         self.updateTimer = QTimer()
         self.updateTimeoutTimer = QTimeLine()
 
@@ -46,7 +48,21 @@ class MainWindow(QMainWindow):
         self.btnClearData.clicked.connect(self.clear_json)
         self.btnRandomWeapon.clicked.connect(self.random_weapon)
         self.btnUpdateApp.clicked.connect(self.update_app)
-        self.leFind.textChanged[str].connect(self.find_and_display_weapons)
+        self.leFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twMain,
+            self.twMainModel
+        ))
+        self.lePartsWeaponsFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twPartsWeapons,
+            self.twMainModel
+        ))
+        self.lePartsModsFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twPartsMods,
+            self.twPartsModsModel
+        ))
         self.btnCheckNewVersion.clicked.connect(lambda: self.check_new_version('button'))
         self.btnGithubLink.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.githubLink)))
         self.btnUpdateWeapons.clicked.connect(lambda: self.update_data('weapons'))
@@ -83,6 +99,7 @@ class MainWindow(QMainWindow):
         self.twRandom.customContextMenuRequested.connect(self.custom_tree_view_context_menu)
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
         self.twPartsWeapons.setModel(self.twMainModel)
+        self.twPartsMods.setModel(self.twPartsModsModel)
         self.tabWidgetMain.setCurrentWidget(self.tabMain)
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
@@ -100,10 +117,6 @@ class MainWindow(QMainWindow):
         self.updateTimer.start(300000)
         self.update_json()
         self.check_new_version()
-
-        modsJsonModel = JsonModel()
-        modsJsonModel.fillModel(self.jsonData['mods'])
-        self.twPartsMods.setModel(modsJsonModel)
 
     @pyqtSlot()
     def import_json(self):
@@ -144,23 +157,28 @@ class MainWindow(QMainWindow):
         self.twMain.setModel(self.twMainModel)
         self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
 
-    @pyqtSlot(str)
-    def find_and_display_weapons(self, query):
+        self.twPartsWeapons.setModel(self.twMainModel)
+
+        self.twPartsModsModel.fillModel(self.jsonData['mods'])
+        self.twPartsMods.setModel(self.twPartsModsModel)
+
+    @pyqtSlot(str, QTreeView, QStandardItemModel)
+    def find_and_display_rows(self, query, treeView_, standardModel_):
         if query == '':
-            self.twMain.setModel(self.twMainModel)
+            treeView_.setModel(standardModel_)
             return
 
-        if self.twMainModel.rowCount == 0:
+        if standardModel_.rowCount == 0:
             return
 
         searchModel = JsonModel()
 
-        for item in self.twMainModel.findItems(query, Qt.MatchContains):
+        for item in standardModel_.findItems(query, Qt.MatchContains):
             item_clone = item.clone()
             searchModel.appendRow(item_clone)
             JsonModel.copyItemWithChildren(item_clone, item)
 
-        self.twMain.setModel(searchModel)
+        treeView_.setModel(searchModel)
 
     @pyqtSlot()
     def create_random_weapon(self, randomJson_, key_, json_, isEmpty_=False):
