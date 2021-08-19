@@ -82,6 +82,7 @@ class MainWindow(QMainWindow):
         self.twRandom.setItemsExpandable(False)
         self.twRandom.customContextMenuRequested.connect(self.custom_tree_view_context_menu)
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.twPartsWeapons.setModel(self.twMainModel)
         self.tabWidgetMain.setCurrentWidget(self.tabMain)
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
@@ -99,6 +100,10 @@ class MainWindow(QMainWindow):
         self.updateTimer.start(300000)
         self.update_json()
         self.check_new_version()
+
+        modsJsonModel = JsonModel()
+        modsJsonModel.fillModel(self.jsonData['mods'])
+        self.twPartsMods.setModel(modsJsonModel)
 
     @pyqtSlot()
     def import_json(self):
