@@ -1,5 +1,6 @@
 import datetime
 import json
+import logging
 import math
 import time
 
@@ -49,6 +50,8 @@ def get_data_from_wiki(worker_, dict_):
     urlMods = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B5%D0%B9%D0%BD%D1%8B%D0%B5_' \
               '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B '
 
+    logger = logging.getLogger('TRND.wiki_parser')
+
     weapons = 'weapons'
     mods = 'mods'
     modsConflicts = 'modsConflicts'
@@ -69,6 +72,7 @@ def get_data_from_wiki(worker_, dict_):
         outDict.pop(modsConflicts, None)
     outDict = utils.validate_data(outDict)
 
+    logger.info("Started " + dict_['type'] + " update")
     downloadTime = time.perf_counter()
     if dict_['type'] == weapons or dict_['type'] == mods:
         minF = 0
@@ -92,6 +96,7 @@ def get_data_from_wiki(worker_, dict_):
             html = requests.get(queryPage)
             html.raise_for_status()
         except requests.exceptions.RequestException as err:
+            logger.error(err)
             showError()
             return
 
@@ -137,6 +142,7 @@ def get_data_from_wiki(worker_, dict_):
                     r = requests.get(site + a_.get('href'))
                     r.raise_for_status()
                 except requests.exceptions.RequestException as err:
+                    logger.error(err)
                     showError()
                     return
 
@@ -213,6 +219,8 @@ def get_data_from_wiki(worker_, dict_):
 
                             if modLinkStr not in outDict[dict_['type']][weaponNameStr]:
                                 outDict[dict_['type']][weaponNameStr].append(modLinkStr)
+
+    logger.info(dict_['type'] + " update completed")
 
     elapsed = time.perf_counter() - downloadTime
     elapsedStr = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))
