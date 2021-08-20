@@ -36,7 +36,7 @@ def init_environ():
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
 
-    os.environ['VERSION_NOW'] = '0.16'
+    os.environ['VERSION_NOW'] = '0.17'
 
 
 def init_logger():
