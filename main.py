@@ -19,11 +19,12 @@ def init_environ():
 
     # Adding path to internal json
     if platform.system() == 'Windows':
-        os.environ['DATAFOLDER'] = os.environ.get('APPDATA') + '\\TRND\\'
-        os.environ['DATAFILE'] = os.environ.get('APPDATA') + '\\TRND\\data.json'
+        os.environ['DATAFOLDER'] = os.path.join(os.environ.get('APPDATA'), 'TRND')
     else:
-        os.environ['DATAFOLDER'] = os.environ.get('HOME') + '/.trnd/'
-        os.environ['DATAFILE'] = os.environ.get('HOME') + '/.trnd/data.json'
+        os.environ['DATAFOLDER'] = os.path.join(os.environ.get('HOME'), '.trnd')
+
+    os.environ['DATAFILE'] = os.path.join(os.environ.get('DATAFOLDER'), 'data.json')
+    os.environ['LOGSFOLDER'] = os.path.join(os.environ.get('DATAFOLDER'), 'logs')
 
     if not os.path.exists(os.environ.get('DATAFOLDER')):
         os.makedirs(os.environ.get('DATAFOLDER'))
@@ -46,15 +47,11 @@ def apply_theme(app):
 
 
 def init_logger():
-    if getattr(sys, 'frozen', False):
-        programDir = os.path.dirname(sys.executable)
-    else:
-        programDir = os.path.dirname(os.path.abspath(__file__))
     logger = logging.getLogger('TRND')
     logger.setLevel(logging.INFO)
 
     formatter_ = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logsPath = os.path.abspath(programDir + '/logs/')
+    logsPath = os.path.abspath(os.environ.get('LOGSFOLDER'))
     filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.log'
     fullPath = os.path.join(logsPath, filename)
 
