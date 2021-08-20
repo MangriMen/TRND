@@ -1,6 +1,9 @@
+import datetime
 import os
 import platform
 import sys
+import logging
+from pathlib import Path
 
 from PyQt5 import QtGui
 from PyQt5.QtCore import QTranslator
@@ -42,9 +45,49 @@ def apply_theme(app):
         app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
 
 
+def init_logger():
+    if getattr(sys, 'frozen', False):
+        programDir = sys.executable
+    else:
+        programDir = os.path.dirname(os.path.abspath(__file__))
+    logger = logging.getLogger('TRND')
+    logger.setLevel(logging.INFO)
+
+    formatter_ = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+    logsPath = os.path.abspath(programDir + '/logs/')
+    filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.log'
+    fullPath = os.path.join(logsPath, filename)
+
+    Path(logsPath).mkdir(parents=True, exist_ok=True)
+
+    filesCount = len(os.listdir(logsPath))
+
+    def clear_dir(directory):
+        directory = Path(directory)
+        for item in directory.iterdir():
+            if item.is_dir():
+                clear_dir(item)
+            else:
+                item.unlink()
+
+    if filesCount > 10:
+        clear_dir(logsPath)
+
+    try:
+        fileHandler = logging.FileHandler(fullPath)
+    except PermissionError:
+        pass
+    else:
+        fileHandler.setFormatter(formatter_)
+
+        logger.addHandler(fileHandler)
+        logger.info('Program started')
+
+
 def main():
     suppress_qt_warnings()
     init_environ()
+    init_logger()
 
     app = QApplication(sys.argv)
 
