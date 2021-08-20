@@ -13,6 +13,13 @@ from qt_material import apply_stylesheet
 from libs.main_window import MainWindow
 
 
+def suppress_qt_warnings():
+    os.environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+    os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+    os.environ["QT_SCALE_FACTOR"] = "1"
+
+
 def init_environ():
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         os.chdir(sys._MEIPASS)
@@ -30,20 +37,6 @@ def init_environ():
         os.makedirs(os.environ.get('DATAFOLDER'))
 
     os.environ['VERSION_NOW'] = '0.16'
-
-
-def suppress_qt_warnings():
-    os.environ["QT_DEVICE_PIXEL_RATIO"] = "0"
-    os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
-    os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
-    os.environ["QT_SCALE_FACTOR"] = "1"
-
-
-def apply_theme(app):
-    QtGui.QFontDatabase.addApplicationFont("data/Roboto-Regular.ttf")
-    apply_stylesheet(app, theme="data/tarkov_theme.xml")
-    with open('data/additional_style.css') as file:
-        app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
 
 
 def init_logger():
@@ -81,6 +74,19 @@ def init_logger():
         logger.info('Program started')
 
 
+def init_translator(app):
+    translator = QTranslator(app)
+    translator.load("data/qtbase_ru.qm")
+    app.installTranslator(translator)
+
+
+def init_theme(app):
+    QtGui.QFontDatabase.addApplicationFont("data/Roboto-Regular.ttf")
+    apply_stylesheet(app, theme="data/tarkov_theme.xml")
+    with open('data/additional_style.css') as file:
+        app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
+
+
 def main():
     suppress_qt_warnings()
     init_environ()
@@ -88,11 +94,8 @@ def main():
 
     app = QApplication(sys.argv)
 
-    translator = QTranslator(app)
-    translator.load("data/qtbase_ru.qm")
-
-    app.installTranslator(translator)
-    apply_theme(app)
+    init_translator(app)
+    init_theme(app)
 
     window = MainWindow()
     window.show()
