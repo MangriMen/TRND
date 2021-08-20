@@ -472,7 +472,6 @@ class MainWindow(QMainWindow):
         btnCancel.hide()
 
         dlg.setFixedSize(dlg.width() * 1.5, dlg.height())
-        dlg.canceled.connect(self.update_thread.stop)
 
         dlg.show()
 
@@ -485,6 +484,8 @@ class MainWindow(QMainWindow):
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
                                                                                  total_length_display))
         self.update_thread.thread.finished.connect(stop_process)
+
+        dlg.canceled.connect(self.update_thread.stop)
 
         self.taskbarProgress.show()
         self.update_thread.thread.start()
