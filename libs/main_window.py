@@ -1,4 +1,5 @@
 import datetime
+import logging
 import os
 import random
 import re
@@ -117,6 +118,8 @@ class MainWindow(QMainWindow):
         self.updateTimer.start(300000)
         self.update_json()
         self.check_new_version()
+
+        self.logger = logging.getLogger('TRND.main_window')
 
     @pyqtSlot()
     def import_json(self):
