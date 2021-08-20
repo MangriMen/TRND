@@ -3,13 +3,18 @@ import json
 import os
 import re
 import threading
+from pathlib import Path
 
 import requests
 
+from libs import consts
 
-def load_data():
+
+def load_data(filePath=None):
+    if filePath is None:
+        filePath = os.environ.get('DATA_FILE_PATH')
     try:
-        with open(os.environ.get('DATAFILE'), 'r', encoding='utf-8') as fileIn:
+        with open(filePath, 'r', encoding='utf-8') as fileIn:
             try:
                 json_ = json.load(fileIn)
             except json.decoder.JSONDecodeError:
@@ -20,8 +25,10 @@ def load_data():
         return json_
 
 
-def dump_data(dict_):
-    with open(os.environ.get('DATAFILE'), 'w', encoding='utf-8') as fileOut:
+def dump_data(dict_, filePath=None):
+    if filePath is None:
+        filePath = os.environ.get('DATA_FILE_PATH')
+    with open(filePath, 'w', encoding='utf-8') as fileOut:
         json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
         
 
@@ -97,15 +104,24 @@ def get_update_info(githubLinkLatestRelease):
 def validate_data(jsonData):
     if jsonData is None:
         jsonData = dict()
-    if 'weaponsLastUpdate' not in jsonData:
-        jsonData['weaponsLastUpdate'] = 'unknown'
-    if 'modsLastUpdate' not in jsonData:
-        jsonData['modsLastUpdate'] = 'unknown'
-    if 'weapons' not in jsonData:
-        jsonData['weapons'] = dict()
-    if 'mods' not in jsonData:
-        jsonData['mods'] = dict()
-    if 'modsConflicts' not in jsonData:
-        jsonData['modsConflicts'] = dict()
+    if consts.DATA_WEAPONS_LAST_UPDATE_KEY not in jsonData:
+        jsonData[consts.DATA_WEAPONS_LAST_UPDATE_KEY] = 'unknown'
+    if consts.DATA_MODS_LAST_UPDATE_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_LAST_UPDATE_KEY] = 'unknown'
+    if consts.DATA_WEAPONS_KEY not in jsonData:
+        jsonData[consts.DATA_WEAPONS_KEY] = dict()
+    if consts.DATA_MODS_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_KEY] = dict()
+    if consts.DATA_MODS_CONFLICTS_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_CONFLICTS_KEY] = dict()
 
     return jsonData
+
+
+def clear_dir(directoryPath):
+    directory = Path(directoryPath)
+    for item in directory.iterdir():
+        if item.is_dir():
+            clear_dir(item)
+        else:
+            item.unlink()
