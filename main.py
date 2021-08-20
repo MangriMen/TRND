@@ -10,6 +10,8 @@ from PyQt5.QtCore import QTranslator
 from PyQt5.QtWidgets import QApplication
 from qt_material import apply_stylesheet
 
+from libs import consts
+from libs import utils
 from libs.main_window import MainWindow
 
 
@@ -21,69 +23,72 @@ def suppress_qt_warnings():
 
 
 def init_environ():
+    # Change dir to sys._MEIPASS if run from frozen executable
     if getattr(sys, 'frozen', False) and hasattr(sys, '_MEIPASS'):
         os.chdir(sys._MEIPASS)
 
-    # Adding path to internal json
+    # Set path for user data folder
     if platform.system() == 'Windows':
-        os.environ['DATAFOLDER'] = os.path.join(os.environ.get('APPDATA'), 'TRND')
+        os.environ['DATA_FOLDER_PATH'] = os.path.join(os.environ.get(consts.PARENT_FOLDER_ENV_WIN),
+                                                      consts.PROGRAM_FOLDER_WIN)
     else:
-        os.environ['DATAFOLDER'] = os.path.join(os.environ.get('HOME'), '.trnd')
+        os.environ['DATA_FOLDER_PATH'] = os.path.join(os.environ.get(consts.PARENT_FOLDER_ENV_LINUX),
+                                                      consts.PROGRAM_FOLDER_LINUX)
 
-    os.environ['DATAFILE'] = os.path.join(os.environ.get('DATAFOLDER'), 'data.json')
-    os.environ['LOGSFOLDER'] = os.path.join(os.environ.get('DATAFOLDER'), 'logs')
+    os.environ['DATA_FILE_PATH'] = os.path.join(os.environ.get('DATA_FOLDER_PATH'), consts.DATA_FILE)
+    os.environ['LOGS_FOLDER_PATH'] = os.path.join(os.environ.get('DATA_FOLDER_PATH'), consts.LOGS_FOLDER)
 
-    if not os.path.exists(os.environ.get('DATAFOLDER')):
-        os.makedirs(os.environ.get('DATAFOLDER'))
-
-    os.environ['VERSION_NOW'] = '0.17'
+    Path(os.environ.get('DATA_FOLDER_PATH')).mkdir(parents=True, exist_ok=True)
 
 
 def init_logger():
-    logger = logging.getLogger('TRND')
+    logger = logging.getLogger(consts.PROGRAM_NAME)
     logger.setLevel(logging.INFO)
 
-    formatter_ = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
-    logsPath = os.path.abspath(os.environ.get('LOGSFOLDER'))
-    filename = datetime.datetime.now().strftime("%Y-%m-%d_%H-%M-%S") + '.log'
+    logsPath = os.path.abspath(os.environ.get('LOGS_FOLDER_PATH'))
+    filename = datetime.datetime.now().strftime(consts.LOGS_FILE_STRFTIME) + consts.LOGS_FILE_EXTENSION
     fullPath = os.path.join(logsPath, filename)
 
-    Path(logsPath).mkdir(parents=True, exist_ok=True)
-
-    filesCount = len(os.listdir(logsPath))
-
-    def clear_dir(directory):
-        directory = Path(directory)
-        for item in directory.iterdir():
-            if item.is_dir():
-                clear_dir(item)
-            else:
-                item.unlink()
-
-    if filesCount > 10:
-        clear_dir(logsPath)
-
     try:
+        Path(logsPath).mkdir(parents=True, exist_ok=True)
+
+        if len(os.listdir(logsPath)) > consts.LOGS_MAX_COUNT:
+            utils.clear_dir(logsPath)
+
         fileHandler = logging.FileHandler(fullPath)
-    except PermissionError:
+    except WindowsError:
         pass
     else:
+        formatter_ = logging.Formatter(consts.LOGGER_FORMAT_STR)
         fileHandler.setFormatter(formatter_)
 
         logger.addHandler(fileHandler)
         logger.info('Program started')
 
 
+def init_app():
+    app = QApplication(sys.argv)
+    init_translator(app)
+    init_theme(app)
+
+    return app
+
+
 def init_translator(app):
     translator = QTranslator(app)
-    translator.load("data/qtbase_ru.qm")
+    translator.load(os.path.join(consts.RESOURCE_FOLDER, consts.TRANSLATOR_FILE))
     app.installTranslator(translator)
 
 
 def init_theme(app):
-    QtGui.QFontDatabase.addApplicationFont("data/Roboto-Regular.ttf")
-    apply_stylesheet(app, theme="data/tarkov_theme.xml")
-    with open('data/additional_style.css') as file:
+    # Applying font
+    QtGui.QFontDatabase.addApplicationFont(os.path.join(consts.RESOURCE_FOLDER, consts.FONT_FILE))
+
+    # Applying base theme
+    apply_stylesheet(app, theme=os.path.join(consts.RESOURCE_FOLDER, consts.THEME_FILE))
+
+    # Applying additional styles
+    with open(os.path.join(consts.RESOURCE_FOLDER, consts.STYLE_FILE)) as file:
         app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
 
 
@@ -91,11 +96,7 @@ def main():
     suppress_qt_warnings()
     init_environ()
     init_logger()
-
-    app = QApplication(sys.argv)
-
-    init_translator(app)
-    init_theme(app)
+    app = init_app()
 
     window = MainWindow()
     window.show()
