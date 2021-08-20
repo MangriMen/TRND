@@ -47,7 +47,7 @@ def apply_theme(app):
 
 def init_logger():
     if getattr(sys, 'frozen', False):
-        programDir = sys.executable
+        programDir = os.path.dirname(sys.executable)
     else:
         programDir = os.path.dirname(os.path.abspath(__file__))
     logger = logging.getLogger('TRND')
