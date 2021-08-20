@@ -1,10 +1,41 @@
 import datetime
+import json
+import logging
 import math
 import time
 
 import requests
 from bs4 import BeautifulSoup
 from libs import utils
+
+
+def check_data_pages_update():
+    URL = 'https://escapefromtarkov.fandom.com/ru/api.php?'
+    PARAMS = {
+        "action": "query",
+        "prop": "revisions",
+        "titles": "Оружие|Оружейные части и моды",
+        "rvprop": "timestamp",
+        "formatversion": "2",
+        "format": "json"
+    }
+
+    try:
+        response = requests.get(url=URL, params=PARAMS)
+        response.raise_for_status()
+        response = response.json()
+    except requests.exceptions.RequestException:
+        response = None
+    except json.JSONDecodeError:
+        response = None
+
+    try:
+        lastPageEdit = dict()
+        lastPageEdit['weapons'] = response['query']['pages'][0]['revisions'][0]['timestamp']
+        lastPageEdit['mods'] = response['query']['pages'][1]['revisions'][0]['timestamp']
+    except KeyError:
+        lastPageEdit = ''
+    return lastPageEdit
 
 
 def get_data_from_wiki(worker_, dict_):
@@ -18,6 +49,8 @@ def get_data_from_wiki(worker_, dict_):
     urlWeapons = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B8%D0%B5'
     urlMods = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B5%D0%B9%D0%BD%D1%8B%D0%B5_' \
               '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B '
+
+    logger = logging.getLogger('TRND.wiki_parser')
 
     weapons = 'weapons'
     mods = 'mods'
@@ -33,8 +66,13 @@ def get_data_from_wiki(worker_, dict_):
     secondLevelFormatStr = '%8s%s'
     thirdLevelFormatStr = '%12s%s'
 
-    outDict = utils.validate_data(dict_['jsonData'])
+    outDict = dict_['jsonData'].copy()
+    outDict.pop(dict_['type'], None)
+    if dict_['type'] == mods:
+        outDict.pop(modsConflicts, None)
+    outDict = utils.validate_data(outDict)
 
+    logger.info("Started " + dict_['type'] + " update")
     downloadTime = time.perf_counter()
     if dict_['type'] == weapons or dict_['type'] == mods:
         minF = 0
@@ -58,6 +96,7 @@ def get_data_from_wiki(worker_, dict_):
             html = requests.get(queryPage)
             html.raise_for_status()
         except requests.exceptions.RequestException as err:
+            logger.error(err)
             showError()
             return
 
@@ -103,6 +142,7 @@ def get_data_from_wiki(worker_, dict_):
                     r = requests.get(site + a_.get('href'))
                     r.raise_for_status()
                 except requests.exceptions.RequestException as err:
+                    logger.error(err)
                     showError()
                     return
 
@@ -179,6 +219,8 @@ def get_data_from_wiki(worker_, dict_):
 
                             if modLinkStr not in outDict[dict_['type']][weaponNameStr]:
                                 outDict[dict_['type']][weaponNameStr].append(modLinkStr)
+
+    logger.info(dict_['type'] + " update completed")
 
     elapsed = time.perf_counter() - downloadTime
     elapsedStr = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))

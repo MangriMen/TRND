@@ -1,3 +1,5 @@
+import datetime
+import logging
 import os
 import random
 import re
@@ -9,19 +11,20 @@ import requests
 from PyQt5 import uic
 from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
 from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot, QPoint
-from PyQt5.QtGui import QColor, QFont
-from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar
+from PyQt5.QtGui import QColor, QFont, QStandardItemModel
+from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar, \
+    QTreeView
 from PyQt5 import QtWinExtras
 
 from libs import utils
 from libs.qt_extends import JsonModel, ThreadController, showDetailedError
-from libs.wiki_parser import get_data_from_wiki
+from libs.wiki_parser import get_data_from_wiki, check_data_pages_update
 
 
-class MyWindow(QMainWindow):
+class MainWindow(QMainWindow):
     def __init__(self):
-        super(MyWindow, self).__init__()
-        uic.loadUi('data/TRND.ui', self)
+        super(MainWindow, self).__init__()
+        uic.loadUi('data/main_window.ui', self)
 
         self.date_format_str = '%d.%m.%Y %X'
         self.updateCheckTimeout = 60
@@ -32,9 +35,12 @@ class MyWindow(QMainWindow):
         self.data_thread = None
         self.jsonData = None
         self.isUpdateQuestion = True
+        self.isDataWeaponsUpdateQuestion = True
+        self.isDataModsUpdateQuestion = True
 
         self.twMainModel = JsonModel()
         self.twRandomModel = JsonModel()
+        self.twPartsModsModel = JsonModel()
         self.updateTimer = QTimer()
         self.updateTimeoutTimer = QTimeLine()
 
@@ -43,7 +49,21 @@ class MyWindow(QMainWindow):
         self.btnClearData.clicked.connect(self.clear_json)
         self.btnRandomWeapon.clicked.connect(self.random_weapon)
         self.btnUpdateApp.clicked.connect(self.update_app)
-        self.leFind.textChanged[str].connect(self.find_and_display_weapons)
+        self.leFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twMain,
+            self.twMainModel
+        ))
+        self.lePartsWeaponsFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twPartsWeapons,
+            self.twMainModel
+        ))
+        self.lePartsModsFind.textChanged.connect(lambda value: self.find_and_display_rows(
+            value,
+            self.twPartsMods,
+            self.twPartsModsModel
+        ))
         self.btnCheckNewVersion.clicked.connect(lambda: self.check_new_version('button'))
         self.btnGithubLink.clicked.connect(lambda: QDesktopServices.openUrl(QUrl(self.githubLink)))
         self.btnUpdateWeapons.clicked.connect(lambda: self.update_data('weapons'))
@@ -79,6 +99,8 @@ class MyWindow(QMainWindow):
         self.twRandom.setItemsExpandable(False)
         self.twRandom.customContextMenuRequested.connect(self.custom_tree_view_context_menu)
         self.twRandom.setContextMenuPolicy(Qt.CustomContextMenu)
+        self.twPartsWeapons.setModel(self.twMainModel)
+        self.twPartsMods.setModel(self.twPartsModsModel)
         self.tabWidgetMain.setCurrentWidget(self.tabMain)
         self.lblVersion.setText(os.environ.get('VERSION_NOW'))
 
@@ -96,6 +118,8 @@ class MyWindow(QMainWindow):
         self.updateTimer.start(300000)
         self.update_json()
         self.check_new_version()
+
+        self.logger = logging.getLogger('TRND.main_window')
 
     @pyqtSlot()
     def import_json(self):
@@ -136,23 +160,28 @@ class MyWindow(QMainWindow):
         self.twMain.setModel(self.twMainModel)
         self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
 
-    @pyqtSlot(str)
-    def find_and_display_weapons(self, query):
+        self.twPartsWeapons.setModel(self.twMainModel)
+
+        self.twPartsModsModel.fillModel(self.jsonData['mods'])
+        self.twPartsMods.setModel(self.twPartsModsModel)
+
+    @pyqtSlot(str, QTreeView, QStandardItemModel)
+    def find_and_display_rows(self, query, treeView_, standardModel_):
         if query == '':
-            self.twMain.setModel(self.twMainModel)
+            treeView_.setModel(standardModel_)
             return
 
-        if self.twMainModel.rowCount == 0:
+        if standardModel_.rowCount == 0:
             return
 
         searchModel = JsonModel()
 
-        for item in self.twMainModel.findItems(query, Qt.MatchContains):
+        for item in standardModel_.findItems(query, Qt.MatchContains):
             item_clone = item.clone()
             searchModel.appendRow(item_clone)
             JsonModel.copyItemWithChildren(item_clone, item)
 
-        self.twMain.setModel(searchModel)
+        treeView_.setModel(searchModel)
 
     @pyqtSlot()
     def create_random_weapon(self, randomJson_, key_, json_, isEmpty_=False):
@@ -280,10 +309,44 @@ class MyWindow(QMainWindow):
         self.updateTimeoutTimer.setUpdateInterval(1000)
         self.updateTimeoutTimer.start()
 
+    @pyqtSlot()
+    def notify_about_data_pages_update(self):
+        if not (lastPageEdit := check_data_pages_update()):
+            return
+        lastDataUpdateTime = dict()
+        for type_ in lastPageEdit:
+            try:
+                lastPageEdit[type_] = datetime.datetime.fromisoformat(lastPageEdit[type_].replace('Z', ''))
+                lastDataUpdateTime[type_] = datetime.datetime.fromisoformat(self.jsonData[type_ + 'LastUpdate'])
+            except KeyError:
+                pass
+            except ValueError:
+                pass
+            else:
+                if (self.isDataWeaponsUpdateQuestion and type_ == 'weapons')\
+                        or (self.isDataModsUpdateQuestion and type_ == 'mods'):
+                    if lastPageEdit[type_] > lastDataUpdateTime[type_]:
+                        typeTitle = 'оружия' if type_ == 'weapons' else 'модов'
+                        res = QMessageBox.information(self, 'Новая версия ' + typeTitle,
+                                                      'Доступна новая версия ' + typeTitle
+                                                      + '. Обновить?',
+                                                      (QMessageBox.Ok | QMessageBox.Cancel))
+                        if type_ == 'weapons':
+                            self.isDataWeaponsUpdateQuestion = False
+                        elif type_ == 'mods':
+                            self.isDataModsUpdateQuestion = False
+
+                        if res == QMessageBox.Ok:
+                            self.tabWidgetMain.setCurrentWidget(self.tabData)
+                            self.update_data(type_)
+                            return
+
     @pyqtSlot(str)
     def check_new_version(self, sender='timer'):
         if sender == 'button':
             self.start_update_restrict_timeout()
+        elif sender == 'timer':
+            self.notify_about_data_pages_update()
 
         response = utils.get_update_info(self.githubLinkLastRelease)
 
@@ -295,19 +358,15 @@ class MyWindow(QMainWindow):
                     str(response['error_msg']))
             return
 
-        self.teUpdateChangeList.setText('Последняя версия: ' + response['data'][0]['tag_name'])
-        self.teUpdateChangeList.append('')
-        indent = '  '
+        changelogStr = ''
         for version in response['data']:
-            self.teUpdateChangeList.append(version['name'])
-            if version['body']:
-                body = indent + version['body'].replace('\n', '\n' + indent)
-            else:
-                body = indent + 'Description not found'
-            self.teUpdateChangeList.append(body)
+            body = version['body'] or '        Описание отсутствует'
+            changelogStr += ''.join(['### ', version['name'], '\n', body, '\n\n'])
+        self.teUpdateChangeList.setMarkdown(changelogStr)
 
         if float(response['data'][0]['tag_name']) > float(os.environ.get('VERSION_NOW')):
-            self.tabWidgetMain.setTabText(2, self.tabUpdate.accessibleName() + ' (новая версия)')
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName()
+                                          + '(новая версия)')
             if (sender == 'timer' and self.isUpdateQuestion) or self.tabWidgetMain.currentWidget() == self.tabUpdate:
                 if sender == 'timer':
                     message = 'Перейти на страницу обновления?'
@@ -325,7 +384,7 @@ class MyWindow(QMainWindow):
         else:
             if sender == 'button':
                 QMessageBox.information(self, 'Обновление', 'Установлена последняя версия.', QMessageBox.Ok)
-            self.tabWidgetMain.setTabText(2, self.tabUpdate.accessibleName())
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName())
 
     @pyqtSlot()
     def update_app(self):
@@ -412,7 +471,7 @@ class MyWindow(QMainWindow):
         dlg.setCancelButton(btnCancel)
         btnCancel.hide()
 
-        dlg.setFixedSize(dlg.width()*1.5, dlg.height())
+        dlg.setFixedSize(dlg.width() * 1.5, dlg.height())
         dlg.canceled.connect(self.update_thread.stop)
 
         dlg.show()
@@ -422,7 +481,7 @@ class MyWindow(QMainWindow):
 
         self.update_thread.worker.progress.connect(dlg.setValue)
         self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
-            (int(value) / int(total_length))*100))
+            (int(value) / int(total_length)) * 100))
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
                                                                                  total_length_display))
         self.update_thread.thread.finished.connect(stop_process)
@@ -451,6 +510,7 @@ class MyWindow(QMainWindow):
             main.lblProgress.setText("")
             main.update_json()
             main.taskbarProgress.hide()
+            self.notify_about_data_pages_update()
 
         if self.data_thread and self.data_thread.isRunning:
             self.data_thread.stop()
@@ -528,7 +588,7 @@ class MyWindow(QMainWindow):
         clickedRowText = self.twRandomModel.itemFromIndex(index_).text()
 
         pathToRootList = list()
-        while (item := self.twRandomModel.itemFromIndex(index_)) is not None\
+        while (item := self.twRandomModel.itemFromIndex(index_)) is not None \
                 and (index_ := index_.parent()) is not None:
             pathToRootList.append(item.text())
         pathToRootList.reverse()
