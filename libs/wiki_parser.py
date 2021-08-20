@@ -6,6 +6,8 @@ import time
 
 import requests
 from bs4 import BeautifulSoup
+
+from libs import consts
 from libs import utils
 
 
@@ -31,8 +33,8 @@ def check_data_pages_update():
 
     try:
         lastPageEdit = dict()
-        lastPageEdit['weapons'] = response['query']['pages'][0]['revisions'][0]['timestamp']
-        lastPageEdit['mods'] = response['query']['pages'][1]['revisions'][0]['timestamp']
+        lastPageEdit[consts.DATA_WEAPONS_KEY] = response['query']['pages'][0]['revisions'][0]['timestamp']
+        lastPageEdit[consts.DATA_MODS_KEY] = response['query']['pages'][1]['revisions'][0]['timestamp']
     except KeyError:
         lastPageEdit = ''
     return lastPageEdit
@@ -48,13 +50,10 @@ def get_data_from_wiki(worker_, dict_):
     site = 'https://escapefromtarkov.fandom.com'
     urlWeapons = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B8%D0%B5'
     urlMods = 'https://escapefromtarkov.fandom.com/ru/wiki/%D0%9E%D1%80%D1%83%D0%B6%D0%B5%D0%B9%D0%BD%D1%8B%D0%B5_' \
-              '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B '
+              '%D1%87%D0%B0%D1%81%D1%82%D0%B8_%D0%B8_%D0%BC%D0%BE%D0%B4%D1%8B'
 
-    logger = logging.getLogger('TRND.wiki_parser')
+    logger = logging.getLogger(consts.PROGRAM_NAME + '.wiki_parser')
 
-    weapons = 'weapons'
-    mods = 'mods'
-    modsConflicts = 'modsConflicts'
     mainBlockClass = 'mw-parser-output'
     weaponNameBlockClass = 'firstHeading'
     modsBlockId = 'Моды'
@@ -68,21 +67,21 @@ def get_data_from_wiki(worker_, dict_):
 
     outDict = dict_['jsonData'].copy()
     outDict.pop(dict_['type'], None)
-    if dict_['type'] == mods:
-        outDict.pop(modsConflicts, None)
+    if dict_['type'] == consts.DATA_MODS_KEY:
+        outDict.pop(consts.DATA_MODS_CONFLICTS_KEY, None)
     outDict = utils.validate_data(outDict)
 
     logger.info("Started " + dict_['type'] + " update")
     downloadTime = time.perf_counter()
-    if dict_['type'] == weapons or dict_['type'] == mods:
+    if dict_['type'] == consts.DATA_WEAPONS_KEY or dict_['type'] == consts.DATA_MODS_KEY:
         minF = 0
         minS = 0
 
-        if dict_['type'] == weapons:
+        if dict_['type'] == consts.DATA_WEAPONS_KEY:
             maxF = 9  # 9
             maxS = 10e9  # 10e9
             queryPage = urlWeapons
-        elif dict_['type'] == mods:
+        elif dict_['type'] == consts.DATA_MODS_KEY:
             maxF = 10e9  # 10e9
             maxS = 10e9  # 10e9
             queryPage = urlMods
@@ -178,7 +177,7 @@ def get_data_from_wiki(worker_, dict_):
                     if category == compatibilityTabTitle:
                         continue
                     elif category == conflictsTabTitle:
-                        outDict[modsConflicts][weaponNameStr] = list()
+                        outDict[consts.DATA_MODS_CONFLICTS_KEY][weaponNameStr] = list()
 
                     if worker_.isRunning:
                         worker_.display_text.emit(secondLevelFormatStr % ('', category))
@@ -203,8 +202,8 @@ def get_data_from_wiki(worker_, dict_):
                             worker_.display_text.emit(thirdLevelFormatStr % ('', modLinkStr))
 
                         if category == conflictsTabTitle:
-                            outDict[modsConflicts][weaponNameStr].append(modLinkStr)
-                        elif dict_['type'] == weapons:
+                            outDict[consts.DATA_MODS_CONFLICTS_KEY][weaponNameStr].append(modLinkStr)
+                        elif dict_['type'] == consts.DATA_WEAPONS_KEY:
                             if weaponNameStr not in outDict[dict_['type']]:
                                 outDict[dict_['type']][weaponNameStr] = dict()
 
@@ -213,7 +212,7 @@ def get_data_from_wiki(worker_, dict_):
 
                             if modLinkStr not in outDict[dict_['type']][weaponNameStr][category]:
                                 outDict[dict_['type']][weaponNameStr][category].append(modLinkStr)
-                        elif dict_['type'] == mods:
+                        elif dict_['type'] == consts.DATA_MODS_KEY:
                             if weaponNameStr not in outDict[dict_['type']]:
                                 outDict[dict_['type']][weaponNameStr] = list()
 
@@ -223,13 +222,13 @@ def get_data_from_wiki(worker_, dict_):
     logger.info(dict_['type'] + " update completed")
 
     elapsed = time.perf_counter() - downloadTime
-    elapsedStr = ("--- %.f minutes %.f seconds ---" % ((elapsed / 60), elapsed % 60))
+    elapsedStr = ("--- %.f минут %.f секунд ---" % ((elapsed / 60), elapsed % 60))
     worker_.display_text.emit(elapsedStr)
 
     currentDateIso = datetime.datetime.now().isoformat()
-    if dict_['type'] == weapons:
-        outDict['weaponsLastUpdate'] = currentDateIso
-    elif dict_['type'] == mods:
-        outDict['modsLastUpdate'] = currentDateIso
+    if dict_['type'] == consts.DATA_WEAPONS_KEY:
+        outDict[consts.DATA_WEAPONS_LAST_UPDATE_KEY] = currentDateIso
+    elif dict_['type'] == consts.DATA_MODS_KEY:
+        outDict[consts.DATA_MODS_LAST_UPDATE_KEY] = currentDateIso
 
     return outDict
