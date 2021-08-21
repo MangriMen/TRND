@@ -68,16 +68,23 @@ def init_logger():
 
 def init_app():
     app = QApplication(sys.argv)
-    init_translator(app)
+    init_translation(app)
     init_theme(app)
 
     return app
 
 
-def init_translator(app):
+def install_translator(app, path):
     translator = QTranslator(app)
-    translator.load(os.path.join(consts.RESOURCE_FOLDER, consts.TRANSLATOR_FILE))
-    app.installTranslator(translator)
+    if translator.load(path):
+        app.installTranslator(translator)
+    else:
+        logging.getLogger(consts.PROGRAM_NAME).error(''.join(['Unable to load translation. Path: ', path]))
+
+
+def init_translation(app):
+    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.QT_TRANSLATOR_FILE))
+    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.PROJECT_TRANSLATION_FILE))
 
 
 def init_theme(app):
