@@ -10,7 +10,7 @@ import tempfile
 import requests
 from PyQt5 import uic, QtWinExtras
 from PyQt5.Qt import QDesktopServices, QUrl, QMenu, QApplication
-from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot, QPoint
+from PyQt5.QtCore import Qt, QTimer, QTimeLine, pyqtSlot, QPoint, QCoreApplication
 from PyQt5.QtGui import QColor, QFont, QStandardItemModel
 from PyQt5.QtWidgets import QMainWindow, QFileDialog, QMessageBox, QProgressDialog, QPushButton, QLabel, QProgressBar, \
     QTreeView
@@ -69,24 +69,24 @@ class MainWindow(QMainWindow):
         self.twRandom.expanded.connect(lambda: self.twRandom.resizeColumnToContents(0))
         self.updateTimer.timeout.connect(lambda: self.check_new_version('timer'))
         self.updateTimeoutTimer.valueChanged.connect(lambda value: self.btnCheckNewVersion.setText(''.join([
-            self.btnCheckNewVersion.accessibleName(),
+            QCoreApplication.translate('MainWindow', self.btnCheckNewVersion.accessibleName()),
             ' (',
             str(consts.UPDATE_TIMEOUT_SECONDS - round(self.updateTimeoutTimer.currentTime() / 1000)),
             ')'
         ])))
         self.updateTimeoutTimer.finished.connect(lambda: self.btnCheckNewVersion.setEnabled(True))
         self.updateTimeoutTimer.finished.connect(lambda: self.btnCheckNewVersion.setText(
-            self.btnCheckNewVersion.accessibleName()
+            QCoreApplication.translate('MainWindow', self.btnCheckNewVersion.accessibleName())
         ))
         self.updateTimeoutTimer.valueChanged.connect(lambda value: self.btnUpdateApp.setText(''.join([
-            self.btnUpdateApp.accessibleName(),
+            QCoreApplication.translate('MainWindow', self.btnUpdateApp.accessibleName()),
             ' (',
             str(consts.UPDATE_TIMEOUT_SECONDS - round(self.updateTimeoutTimer.currentTime() / 1000)),
             ')'
         ])))
         self.updateTimeoutTimer.finished.connect(lambda: self.btnUpdateApp.setEnabled(True))
         self.updateTimeoutTimer.finished.connect(lambda: self.btnUpdateApp.setText(
-            self.btnUpdateApp.accessibleName()
+            QCoreApplication.translate('MainWindow', self.btnUpdateApp.accessibleName())
         ))
 
         self.twMain.setModel(self.twMainModel)
@@ -116,20 +116,49 @@ class MainWindow(QMainWindow):
 
         self.logger = logging.getLogger(consts.PROGRAM_NAME + '.main_window')
 
+        self.retranslateUi()
+
+    def retranslateUi(self):
+        _translate = QCoreApplication.translate
+        self.btnRandomWeapon.setText(_translate('MainWindow', 'Generate'))
+        self.chboxIsRandomWeapon.setText(_translate('MainWindow', 'Random Weapon').upper())
+        self.lblFind.setText(_translate('MainWindow', 'Find:').upper())
+        self.lblPartsWeaponsFind.setText(_translate('MainWindow', 'Weapon:').upper())
+        self.lblPartsModsFind.setText(_translate('MainWindow', 'Mod:').upper())
+        self.btnImportData.setText(_translate('MainWindow', 'Import'))
+        self.btnExportData.setText(_translate('MainWindow', 'Export'))
+        self.btnClearData.setText(_translate('MainWindow', 'Clear data'))
+        self.btnUpdateWeapons.setText(_translate('MainWindow', 'Update weapons'))
+        self.btnUpdateMods.setText(_translate('MainWindow', 'Update mods'))
+        self.lblNow.setText(_translate('MainWindow', 'Now:'))
+        self.lblTotal.setText(_translate('MainWindow', 'Total:'))
+        self.btnCheckNewVersion.setText(_translate('MainWindow', 'Check for updates'))
+        self.btnUpdateApp.setText(_translate('MainWindow', 'Update (beta)'))
+        self.btnGithubLink.setText(_translate('MainWindow', 'Get new version (github)'))
+        self.lblVersionText.setText(_translate('MainWindow', 'Version:'))
+        self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabMain), _translate('MainWindow', 'Randomizer'))
+        self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabParts), _translate('MainWindow',
+                                                                                            'Weapons and mods'))
+        self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabData), _translate('MainWindow', 'Data'))
+        self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), _translate('MainWindow', 'Update'))
+
     @pyqtSlot()
     def import_json(self):
-        pathToJson = QFileDialog().getOpenFileName(self, 'Import JSON', '/', "json(*.json);; all(*.*)")[0]
+        pathToJson = QFileDialog().getOpenFileName(self, QCoreApplication.translate('FileDialog', 'Import JSON'), '/',
+                                                   'json(*.json);; all(*.*)')[0]
         utils.rewrite_file_to_file(pathToJson, os.environ.get('DATA_FILE_PATH'))
         self.update_json()
 
     @pyqtSlot()
     def export_json(self):
-        pathToJson = QFileDialog().getSaveFileName(self, 'Export JSON', '/', "json(*.json)")[0]
+        pathToJson = QFileDialog().getSaveFileName(self, QCoreApplication.translate('FileDialog', 'Export JSON'), '/',
+                                                   'json(*.json)')[0]
         utils.rewrite_file_to_file(os.environ.get('DATA_FILE_PATH'), pathToJson)
 
     @pyqtSlot()
     def clear_json(self):
-        res = QMessageBox.information(self, 'Очистка данных', 'Все данные будут удалены. Продолжить?',
+        res = QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'Data cleansing'),
+                                      QCoreApplication.translate('MessageBox', 'All data will be deleted. Proceed?'),
                                       (QMessageBox.Ok | QMessageBox.Cancel))
         if res == QMessageBox.Ok:
             os.remove(os.environ.get('DATA_FILE_PATH'))
@@ -140,14 +169,16 @@ class MainWindow(QMainWindow):
         self.jsonData = utils.load_data()
         self.jsonData = utils.validate_data(self.jsonData)
 
-        self.lblUpdateWeapons.setText(
-            "ОРУЖИЕ ОБНОВЛЕННО "
-            + utils.date_to_str(self.jsonData[consts.DATA_WEAPONS_LAST_UPDATE_KEY], consts.PARTS_DATE_STRFTIME).upper()
-        )
-        self.lblUpdateMods.setText(
-            "МОДЫ ОБНОВЛЕННЫ "
-            + utils.date_to_str(self.jsonData[consts.DATA_MODS_LAST_UPDATE_KEY], consts.PARTS_DATE_STRFTIME).upper()
-        )
+        self.lblUpdateWeapons.setText(''.join([
+            QCoreApplication.translate('MainWindow', 'Weapons updated').upper(),
+            ' ',
+            utils.date_to_str(self.jsonData[consts.DATA_WEAPONS_LAST_UPDATE_KEY], consts.PARTS_DATE_STRFTIME).upper()
+        ]))
+        self.lblUpdateMods.setText(''.join([
+            QCoreApplication.translate('MainWindow', 'Mods updated').upper(),
+            ' ',
+            utils.date_to_str(self.jsonData[consts.DATA_MODS_LAST_UPDATE_KEY], consts.PARTS_DATE_STRFTIME).upper()
+        ]))
 
         utils.dump_data(self.jsonData)
 
@@ -268,8 +299,10 @@ class MainWindow(QMainWindow):
                     break
 
                 if isQuestion:
-                    res = QMessageBox.question(self, 'Конфликт модов', 'Некоторые моды конфликтуют между '
-                                                                       'собой.\nХотите перегенерировать их?')
+                    res = QMessageBox.question(self, QCoreApplication.translate('MainWindow', 'Mods conflict'),
+                                               QCoreApplication.translate('MainWindow', 'Some mods conflict with each '
+                                                                                        'other.\nDo you want to '
+                                                                                        'regenerate them?'))
                     if res == QMessageBox.Yes:
                         isQuestion = False
                     else:
@@ -288,14 +321,14 @@ class MainWindow(QMainWindow):
     def start_update_restrict_timeout(self):
         self.btnCheckNewVersion.setEnabled(False)
         self.btnCheckNewVersion.setText(''.join([
-            self.btnCheckNewVersion.accessibleName(),
+            QCoreApplication.translate('MainWindow', self.btnCheckNewVersion.accessibleName()),
             ' (',
             str(consts.UPDATE_TIMEOUT_SECONDS),
             ')'
         ]))
         self.btnUpdateApp.setEnabled(False)
         self.btnUpdateApp.setText(''.join([
-            self.btnUpdateApp.accessibleName(),
+            QCoreApplication.translate('MainWindow', self.btnUpdateApp.accessibleName()),
             ' (',
             str(consts.UPDATE_TIMEOUT_SECONDS),
             ')'
@@ -319,13 +352,18 @@ class MainWindow(QMainWindow):
             except ValueError:
                 pass
             else:
-                if (self.isDataWeaponsUpdateQuestion and type_ == consts.DATA_WEAPONS_KEY)\
+                if (self.isDataWeaponsUpdateQuestion and type_ == consts.DATA_WEAPONS_KEY) \
                         or (self.isDataModsUpdateQuestion and type_ == consts.DATA_MODS_KEY):
                     if lastPageEdit[type_] > lastDataUpdateTime[type_]:
                         typeTitle = 'оружия' if type_ == consts.DATA_WEAPONS_KEY else 'модов'
-                        res = QMessageBox.information(self, 'Новая версия ' + typeTitle,
-                                                      'Доступна новая версия ' + typeTitle
-                                                      + '. Обновить?',
+
+                        res = QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'New version'),
+                                                      QCoreApplication.translate('MessageBox', ''.join([
+                                                          'A new version of the ',
+                                                          typeTitle,
+                                                          'is available',
+                                                          '. Update?'
+                                                      ])),
                                                       (QMessageBox.Ok | QMessageBox.Cancel))
                         if type_ == consts.DATA_WEAPONS_KEY:
                             self.isDataWeaponsUpdateQuestion = False
@@ -345,30 +383,38 @@ class MainWindow(QMainWindow):
             self.notify_about_data_pages_update()
 
         response = utils.get_update_info(consts.GITHUB_API_LINK_RELEASES)
-
         if not response['result']:
             if sender == 'button':
                 showDetailedError(
-                    'Ошибка обновления: ' + str(response['error']),
-                    'Невозможно получить данные для обновления.',
+                    ''.join([QCoreApplication.translate('MessageBox', 'Update error: '), str(response['error'])]),
+                    QCoreApplication.translate('MessageBox', 'Unable to get update data.'),
                     str(response['error_msg']))
             return
 
         changelogStr = ''
         for version in response['data']:
-            body = version['body'] or '        Описание отсутствует'
+            body = version['body'] or ''.join([
+                '        ',
+                QCoreApplication.translate('Changelog', 'No description')
+            ])
             changelogStr += ''.join(['### ', version['name'], '\n', body, '\n\n'])
         self.teUpdateChangeList.setMarkdown(changelogStr)
 
         if float(response['data'][0]['tag_name']) > float(consts.VERSION):
-            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName()
-                                          + '(новая версия)')
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate),
+                                          QCoreApplication.translate('MainWindow', self.tabUpdate.accessibleName())
+                                          + QCoreApplication.translate('MainWindow', '(new version)'))
             if (sender == 'timer' and self.isUpdateQuestion) or self.tabWidgetMain.currentWidget() == self.tabUpdate:
                 if sender == 'timer':
-                    message = 'Перейти на страницу обновления?'
+                    message = QCoreApplication.translate('MessageBox', 'Go to the update page?')
                 else:
-                    message = 'Обновить сейчас?'
-                res = QMessageBox.information(self, 'Новая версия', 'Доступна новая версия. ' + message,
+                    message = QCoreApplication.translate('MessageBox', 'Update now?')
+                res = QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'New version'),
+                                              ''.join([
+                                                  QCoreApplication.translate('MessageBox', 'New version available.'),
+                                                  '',
+                                                  message
+                                              ]),
                                               (QMessageBox.Ok | QMessageBox.Cancel))
                 if res == QMessageBox.Ok:
                     if sender == 'timer':
@@ -379,8 +425,11 @@ class MainWindow(QMainWindow):
                     self.isUpdateQuestion = False
         else:
             if sender == 'button':
-                QMessageBox.information(self, 'Обновление', 'Установлена последняя версия.', QMessageBox.Ok)
-            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate), self.tabUpdate.accessibleName())
+                QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'Update'),
+                                        QCoreApplication.translate('MessageBox', 'The latest version is installed.'),
+                                        QMessageBox.Ok)
+            self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate),
+                                          QCoreApplication.translate('MainWindow', self.tabUpdate.accessibleName()))
 
     @pyqtSlot()
     def update_app(self):
@@ -415,18 +464,22 @@ class MainWindow(QMainWindow):
 
         if not response['result']:
             showDetailedError(
-                'Ошибка обновления: ' + response['error'],
-                'Невозможно получить данные для обновления.',
+                ''.join([QCoreApplication.translate('MessageBox', 'Update error: '), response['error']]),
+                QCoreApplication.translate('MessageBox', 'Unable to get update data.'),
                 response['error_msg']
             )
             return
 
         if 'assets' not in response['data']:
-            QMessageBox.warning(self, 'Ошибка', 'Ошибка получения данных.', QMessageBox.Ok)
+            QMessageBox.warning(self, QCoreApplication.translate('MessageBox', 'Error'),
+                                QCoreApplication.translate('MessageBox', 'Unable to get data.'),
+                                QMessageBox.Ok)
             return
 
         if float(response['data']['tag_name']) <= float(consts.VERSION):
-            QMessageBox.information(self, 'Обновление', 'Установлена последняя версия.', QMessageBox.Ok)
+            QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'Update'),
+                                    QCoreApplication.translate('MessageBox', 'The latest version is installed.'),
+                                    QMessageBox.Ok)
             return
 
         self.btnUpdateApp.setEnabled(False)
@@ -438,7 +491,9 @@ class MainWindow(QMainWindow):
                 break
 
         if download_link == '':
-            QMessageBox.warning(self, 'Ошибка', 'Ошибка получения данных.', QMessageBox.Ok)
+            QMessageBox.warning(self, QCoreApplication.translate('MessageBox', 'Error'),
+                                QCoreApplication.translate('MessageBox', 'Unable to get data.'),
+                                QMessageBox.Ok)
             return
 
         downloaded_file = requests.get(download_link, allow_redirects=True, stream=True)
@@ -446,9 +501,9 @@ class MainWindow(QMainWindow):
         total_length = downloaded_file.headers.get('content-length')
         total_length_display = str(int(int(total_length) / 1024)) + ' КБ'
 
-        dlg = QProgressDialog('', 'Отмена', 0, int(total_length), self,
+        dlg = QProgressDialog('', QCoreApplication.translate('MessageBox', 'Cancel'), 0, int(total_length), self,
                               (Qt.WindowTitleHint | Qt.WindowCloseButtonHint | Qt.Dialog))
-        dlg.setWindowTitle('Загрузка инсталлятора')
+        dlg.setWindowTitle(QCoreApplication.translate('MessageBox', 'Downloading the installer'))
 
         font_ = QFont('Roboto', 10)
         font_.setBold(True)
@@ -477,8 +532,8 @@ class MainWindow(QMainWindow):
         self.update_thread.worker.progress.connect(dlg.setValue)
         self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
             (int(value) / int(total_length)) * 100))
-        self.update_thread.worker.progress.connect(lambda value: lblText.setText(str(int(value / 1024)) + ' КБ / ' +
-                                                                                 total_length_display))
+        self.update_thread.worker.progress.connect(lambda value: lblText.setText(''.join([
+            str(int(value / 1024)), ' ', QCoreApplication.translate('Units', 'KB'), ' / ', total_length_display])))
         self.update_thread.thread.finished.connect(stop_process)
 
         dlg.canceled.connect(self.update_thread.stop)
@@ -498,8 +553,9 @@ class MainWindow(QMainWindow):
         def finish(main):
             main.btnUpdateWeapons.setEnabled(True)
             main.btnUpdateMods.setEnabled(True)
-            main.btnUpdateWeapons.setText(main.btnUpdateWeapons.accessibleName())
-            main.btnUpdateMods.setText(main.btnUpdateMods.accessibleName())
+            main.btnUpdateWeapons.setText(QCoreApplication.translate('MainWindow',
+                                                                     main.btnUpdateWeapons.accessibleName()))
+            main.btnUpdateMods.setText(QCoreApplication.translate('MainWindow', main.btnUpdateMods.accessibleName()))
             self.progressNow.setTextVisible(False)
             self.progressTotal.setTextVisible(False)
             main.progressNow.setValue(0)
@@ -511,10 +567,11 @@ class MainWindow(QMainWindow):
 
         if self.data_thread and self.data_thread.isRunning:
             self.data_thread.stop()
-            self.teUpdateInfo.append('----------------------------------------')
-            self.teUpdateInfo.append('Прервано пользователем')
-            self.btnUpdateWeapons.setText(self.btnUpdateWeapons.accessibleName())
-            self.btnUpdateMods.setText(self.btnUpdateMods.accessibleName())
+            self.teUpdateInfo.append('-----------------------------------------------')
+            self.teUpdateInfo.append(QCoreApplication.translate('Update', 'Interrupted by user'))
+            self.btnUpdateWeapons.setText(QCoreApplication.translate('MainWindow',
+                                                                     self.btnUpdateWeapons.accessibleName()))
+            self.btnUpdateMods.setText(QCoreApplication.translate('MainWindow', self.btnUpdateMods.accessibleName()))
             return
 
         self.teUpdateInfo.clear()
@@ -522,10 +579,10 @@ class MainWindow(QMainWindow):
         self.progressTotal.setTextVisible(True)
 
         if type_ == consts.DATA_WEAPONS_KEY:
-            self.btnUpdateWeapons.setText("Отмена")
+            self.btnUpdateWeapons.setText(QCoreApplication.translate('MainWindow', 'Cancel'))
             self.btnUpdateMods.setEnabled(False)
         elif type_ == consts.DATA_MODS_KEY:
-            self.btnUpdateMods.setText("Отмена")
+            self.btnUpdateMods.setText(QCoreApplication.translate('MainWindow', 'Cancel'))
             self.btnUpdateWeapons.setEnabled(False)
 
         self.data_thread = ThreadController(get_data, type=type_, is_debug=False, jsonData=self.jsonData)
@@ -638,10 +695,13 @@ class MainWindow(QMainWindow):
     def custom_tree_view_context_menu(self, location):
         menu = QMenu(self)
         if (index := self.twRandom.indexAt(location)).isValid():
-            menu.addAction('Копировать', lambda: self.custom_tree_view_copy_row(index))
-            menu.addAction('Перегенерировать', lambda: self.replace_random_and_check_conflicts(index))
+            menu.addAction(QCoreApplication.translate('ContextMenu', 'Copy'),
+                           lambda: self.custom_tree_view_copy_row(index))
+            menu.addAction(QCoreApplication.translate('ContextMenu', 'Regenerate'),
+                           lambda: self.replace_random_and_check_conflicts(index))
             menu.addSeparator()
-        menu.addAction('Копировать текст', self.custom_tree_view_copy_text)
-        menu.addAction('Копировать оружие', self.custom_tree_view_copy_json)
-        menu.addAction('Вставить оружие', lambda: self.custom_tree_view_paste_json(QApplication.clipboard().text()))
+        menu.addAction(QCoreApplication.translate('ContextMenu', 'Copy text'), self.custom_tree_view_copy_text)
+        menu.addAction(QCoreApplication.translate('ContextMenu', 'Copy weapon'), self.custom_tree_view_copy_json)
+        menu.addAction(QCoreApplication.translate('ContextMenu', 'Paste weapon'),
+                       lambda: self.custom_tree_view_paste_json(QApplication.clipboard().text()))
         menu.popup(self.twRandom.mapToGlobal(location))
