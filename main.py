@@ -5,14 +5,9 @@ import sys
 import logging
 from pathlib import Path
 
-from PyQt5 import QtGui
-from PyQt5.QtCore import QTranslator
-from PyQt5.QtWidgets import QApplication
-from qt_material import apply_stylesheet
-
 from libs import consts
 from libs import utils
-from libs.main_window import MainWindow
+from libs.application import Application
 
 
 def suppress_qt_warnings():
@@ -66,48 +61,12 @@ def init_logger():
         logger.info('Program started')
 
 
-def init_app():
-    app = QApplication(sys.argv)
-    init_translation(app)
-    init_theme(app)
-
-    return app
-
-
-def install_translator(app, path):
-    translator = QTranslator(app)
-    if translator.load(path):
-        app.installTranslator(translator)
-    else:
-        logging.getLogger(consts.PROGRAM_NAME).error(''.join(['Unable to load translation. Path: ', path]))
-
-
-def init_translation(app):
-    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.QT_TRANSLATOR_FILE))
-    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.PROJECT_TRANSLATION_FILE))
-
-
-def init_theme(app):
-    # Applying font
-    QtGui.QFontDatabase.addApplicationFont(os.path.join(consts.RESOURCE_FOLDER, consts.FONT_FILE))
-
-    # Applying base theme
-    apply_stylesheet(app, theme=os.path.join(consts.RESOURCE_FOLDER, consts.THEME_FILE))
-
-    # Applying additional styles
-    with open(os.path.join(consts.RESOURCE_FOLDER, consts.STYLE_FILE)) as file:
-        app.setStyleSheet(app.styleSheet() + file.read().format(**os.environ))
-
-
 def main():
     suppress_qt_warnings()
     init_environ()
     init_logger()
-    app = init_app()
 
-    window = MainWindow()
-    window.show()
-
+    app = Application(sys.argv)
     sys.exit(app.exec_())
 
 
