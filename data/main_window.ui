@@ -602,7 +602,7 @@
              </font>
             </property>
             <property name="accessibleName">
-             <string>Обновить моды</string>
+             <string>Update mods</string>
             </property>
             <property name="text">
              <string>Обновить моды</string>
@@ -656,7 +656,7 @@
              </font>
             </property>
             <property name="accessibleName">
-             <string>Обновить оружие</string>
+             <string>Update weapons</string>
             </property>
             <property name="text">
              <string>Обновить оружие</string>
@@ -756,7 +756,7 @@
            </font>
           </property>
           <property name="accessibleName">
-           <string>Проверить обновления</string>
+           <string>Check for updates</string>
           </property>
           <property name="text">
            <string>Проверить обновления</string>
@@ -771,7 +771,7 @@
            </font>
           </property>
           <property name="accessibleName">
-           <string>Обновить (бета)</string>
+           <string>Update (beta)</string>
           </property>
           <property name="text">
            <string>Обновить (бета)</string>
