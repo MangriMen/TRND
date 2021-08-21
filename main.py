@@ -83,8 +83,8 @@ def install_translator(app, path):
 
 
 def init_translation(app):
-    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.TRANSLATOR_FILE))
-    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, 'TRND.ru.qm'))
+    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.QT_TRANSLATOR_FILE))
+    install_translator(app, os.path.join(consts.RESOURCE_FOLDER, consts.PROJECT_TRANSLATION_FILE))
 
 
 def init_theme(app):
