@@ -1,7 +1,11 @@
 import datetime
+import inspect
 import json
+import logging
 import os
 import re
+import sys
+import tempfile
 import threading
 from pathlib import Path
 
@@ -28,11 +32,14 @@ def load_data(filePath=None):
 def dump_data(dict_, filePath=None):
     if filePath is None:
         filePath = os.environ.get('DATA_FILE_PATH')
-    with open(filePath, 'w', encoding='utf-8') as fileOut:
-        json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
-        
+    try:
+        with open(filePath, 'w', encoding='utf-8') as fileOut:
+            json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
+    except (FileNotFoundError, PermissionError) as err:
+        raise err
 
-def get_json_dump(dict_):
+
+def get_json_dumps(dict_):
     return json.dumps(dict_, indent=2, ensure_ascii=False) if isinstance(dict_, dict) else None
 
 
@@ -125,3 +132,44 @@ def clear_dir(directoryPath):
             clear_dir(item)
         else:
             item.unlink()
+
+
+def create_logger(name, level=logging.INFO,
+                  *, dateFormat='%Y-%m-%d_%H-%M-%S', folderPath=None, loggerFormat=None, maxCount=50, extension='.log'):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    folderPath = os.path.abspath(folderPath if folderPath is not None else os.path.join(tempfile.tempdir, __name__))
+    fileName = ''.join([datetime.datetime.now().strftime(dateFormat), extension])
+    filePath = os.path.join(folderPath, fileName)
+
+    formatter = logging.Formatter(loggerFormat) if loggerFormat is not None else None
+
+    handlers = dict()
+    error = ''
+
+    try:
+        if len((fileList := os.listdir(folderPath))) > maxCount:
+            os.remove(os.path.join(folderPath, fileList[0]))
+
+        handlers['fileHandler'] = logging.FileHandler(filePath)
+    except WindowsError as error:
+        handlers['fileHandler'] = None
+        handlers['streamHandler'] = logging.StreamHandler(sys.stdout)
+
+    for handlerName, handler in handlers.items():
+        if handler is not None:
+            if formatter is not None:
+                handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
+    if error:
+        logger.error(error)
+
+    logger.info(''.join(['Logger initialized to ', 'stdout' if handlers['fileHandler'] is None else 'file handler']))
+
+
+def get_logger_for_module():
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    return logging.getLogger(''.join([consts.PROGRAM_NAME, '.', mod.__name__]))
