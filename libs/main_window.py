@@ -498,7 +498,7 @@ class MainWindow(QMainWindow):
             QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'Update'),
                                     QCoreApplication.translate('MessageBox', 'The latest version is installed.'),
                                     QMessageBox.Ok)
-            return True
+            return True, ''
 
         self.btnUpdateApp.setEnabled(False)
 
@@ -559,7 +559,7 @@ class MainWindow(QMainWindow):
         self.taskbarProgress.show()
         self.update_thread.thread.start()
 
-        return True
+        return True, ''
 
     @pyqtSlot(str)
     def update_data(self, type_):
