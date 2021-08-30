@@ -22,9 +22,15 @@ from libs.wiki_parser import get_data_from_wiki, check_data_pages_update
 
 
 class MainWindow(QMainWindow):
-    def __init__(self):
+    def __init__(self, errors):
         super(MainWindow, self).__init__()
-        uic.loadUi(os.path.join(consts.RESOURCE_FOLDER, consts.MAIN_WINDOW_UI_FILE), self)
+        uic.loadUi(consts.get_resource_path(consts.MAIN_WINDOW_UI_FILE), self)
+
+        for error in errors:
+            showDetailedError(QCoreApplication.translate('MainWindow', 'Error'),
+                              QCoreApplication.translate('MainWindow', 'An error occurred while loading the '
+                                                                       'application.'),
+                              str(error))
 
         self.update_thread = None
         self.data_thread = None
@@ -180,11 +186,18 @@ class MainWindow(QMainWindow):
             utils.date_to_str(self.jsonData[consts.DATA_MODS_LAST_UPDATE_KEY], consts.PARTS_DATE_STRFTIME).upper()
         ]))
 
-        utils.dump_data(self.jsonData)
+        try:
+            utils.dump_data(self.jsonData)
+        except (FileNotFoundError, PermissionError) as err:
+            showDetailedError(QCoreApplication.translate('MainWindow', 'Write error'),
+                              QCoreApplication.translate('MainWindow', 'Error writing data to file'),
+                              str(err))
+            utils.get_logger_for_module().exception(err)
 
         self.twMainModel.fillModel(self.jsonData[consts.DATA_WEAPONS_KEY])
         self.twMain.setModel(self.twMainModel)
-        self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
+        if self.twMainModel.rowCount() > 0:
+            self.twMain.setCurrentIndex(self.twMainModel.createIndex(0, 0))
 
         self.twPartsWeapons.setModel(self.twMainModel)
 
@@ -431,6 +444,13 @@ class MainWindow(QMainWindow):
             self.tabWidgetMain.setTabText(self.tabWidgetMain.indexOf(self.tabUpdate),
                                           QCoreApplication.translate('MainWindow', self.tabUpdate.accessibleName()))
 
+    @staticmethod
+    @pyqtSlot()
+    def execute_update():
+        subprocess.Popen([tempfile.gettempdir() + '/TRND_update.exe', '/VERYSILENT'])
+        QApplication.closeAllWindows()
+        sys.exit()
+
     @pyqtSlot()
     def update_app(self):
         self.start_update_restrict_timeout()
@@ -456,9 +476,7 @@ class MainWindow(QMainWindow):
             self.taskbarProgress.hide()
             if dlg.wasCanceled():
                 return
-            subprocess.Popen([tempfile.gettempdir() + '/TRND_update.exe', '/VERYSILENT'])
-            self.close()
-            sys.exit()
+            self.execute_update()
 
         response = utils.get_update_info(consts.GITHUB_API_LINK_RELEASES + '/latest')
 
@@ -468,19 +486,19 @@ class MainWindow(QMainWindow):
                 QCoreApplication.translate('MessageBox', 'Unable to get update data.'),
                 response['error_msg']
             )
-            return
+            return False, response['error_msg']
 
         if 'assets' not in response['data']:
             QMessageBox.warning(self, QCoreApplication.translate('MessageBox', 'Error'),
                                 QCoreApplication.translate('MessageBox', 'Unable to get data.'),
                                 QMessageBox.Ok)
-            return
+            return False, 'Unable to get data.'
 
         if float(response['data']['tag_name']) <= float(consts.VERSION):
             QMessageBox.information(self, QCoreApplication.translate('MessageBox', 'Update'),
                                     QCoreApplication.translate('MessageBox', 'The latest version is installed.'),
                                     QMessageBox.Ok)
-            return
+            return True
 
         self.btnUpdateApp.setEnabled(False)
 
@@ -494,7 +512,7 @@ class MainWindow(QMainWindow):
             QMessageBox.warning(self, QCoreApplication.translate('MessageBox', 'Error'),
                                 QCoreApplication.translate('MessageBox', 'Unable to get data.'),
                                 QMessageBox.Ok)
-            return
+            return False, 'Unable to get download link.'
 
         downloaded_file = requests.get(download_link, allow_redirects=True, stream=True)
 
@@ -522,7 +540,7 @@ class MainWindow(QMainWindow):
         dlg.setCancelButton(btnCancel)
         btnCancel.hide()
 
-        dlg.setFixedSize(dlg.width() * 1.5, dlg.height())
+        dlg.setFixedSize(int(dlg.width() * 1.5), dlg.height())
 
         dlg.show()
 
@@ -531,7 +549,7 @@ class MainWindow(QMainWindow):
 
         self.update_thread.worker.progress.connect(dlg.setValue)
         self.update_thread.worker.progress.connect(lambda value: self.taskbarProgress.setValue(
-            (int(value) / int(total_length)) * 100))
+            int((int(value) / int(total_length)) * 100)))
         self.update_thread.worker.progress.connect(lambda value: lblText.setText(''.join([
             str(int(value / 1024)), ' ', QCoreApplication.translate('Units', 'KB'), ' / ', total_length_display])))
         self.update_thread.thread.finished.connect(stop_process)
@@ -540,6 +558,8 @@ class MainWindow(QMainWindow):
 
         self.taskbarProgress.show()
         self.update_thread.thread.start()
+
+        return True
 
     @pyqtSlot(str)
     def update_data(self, type_):
@@ -622,7 +642,7 @@ class MainWindow(QMainWindow):
         if self.twRandomModel:
             twRandomRoot = self.twRandomModel.invisibleRootItem()
             JsonModel.modelToJson(twRandomRoot.child(0, 0), out := dict(), twRandomRoot.child(0, 0).text())
-            out = utils.get_json_dump(out)
+            out = utils.get_json_dumps(out)
             if out is not None:
                 QApplication.clipboard().setText(out)
 
