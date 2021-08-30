@@ -1,3 +1,6 @@
+import os
+import platform
+
 GITHUB_LINK_RELEASES = "https://github.com/MangriMen/TRND/releases"
 GITHUB_API_LINK_RELEASES = "https://api.github.com/repos/MangriMen/TRND/releases"
 
@@ -35,3 +38,19 @@ DATA_MODS_KEY = 'mods'
 DATA_MODS_CONFLICTS_KEY = 'modsConflicts'
 DATA_WEAPONS_LAST_UPDATE_KEY = "weaponsLastUpdate"
 DATA_MODS_LAST_UPDATE_KEY = "modsLastUpdate"
+
+
+def get_program_folder_path():
+    # Get platform to check Windows or Linux for data folder path
+    platform_ = platform.system()
+
+    # Set path for user data folder
+    parentFolder = os.environ.get(PARENT_FOLDER_ENV_WIN if (platform_ == 'Windows') else PARENT_FOLDER_ENV_LINUX)
+    programFolder = PROGRAM_FOLDER_WIN if (platform_ == 'Windows') else PROGRAM_FOLDER_LINUX
+    fullPath = os.path.join(parentFolder, programFolder)
+
+    return fullPath
+
+
+def get_resource_path(filename):
+    return os.path.join(RESOURCE_FOLDER, filename)

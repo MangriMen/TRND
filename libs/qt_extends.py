@@ -1,3 +1,4 @@
+import os
 import typing
 
 from PyQt5.Qt import QStandardItemModel, QStandardItem, QObject, QMessageBox
@@ -6,6 +7,15 @@ from PyQt5.QtGui import QFont, QColor, QPixmap, QIcon
 from PyQt5.QtWidgets import QMainWindow, QApplication
 
 from libs import utils
+
+
+class QtTweaks:
+    @staticmethod
+    def suppress_warnings():
+        os.environ["QT_DEVICE_PIXEL_RATIO"] = "0"
+        os.environ["QT_AUTO_SCREEN_SCALE_FACTOR"] = "1"
+        os.environ["QT_SCREEN_SCALE_FACTORS"] = "1"
+        os.environ["QT_SCALE_FACTOR"] = "1"
 
 
 class StandardItem(QStandardItem):
