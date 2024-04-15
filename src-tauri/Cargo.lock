@@ -3560,6 +3560,7 @@ name = "trnd"
 version = "0.0.0"
 dependencies = [
  "graphql_client",
+ "rand 0.8.5",
  "reqwest",
  "serde",
  "serde_json",

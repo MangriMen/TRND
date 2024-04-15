@@ -3,6 +3,7 @@
 
 use trnd::{
     commands::tarkov_data::{__cmd__update_data, update_data},
+    commands::weapon_generator::{__cmd__generate_weapon, generate_weapon},
     utilities::tauri::get_app_dir,
 };
 
@@ -14,7 +15,7 @@ fn main() {
 
             Ok(())
         })
-        .invoke_handler(tauri::generate_handler![update_data])
+        .invoke_handler(tauri::generate_handler![update_data, generate_weapon])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
 }

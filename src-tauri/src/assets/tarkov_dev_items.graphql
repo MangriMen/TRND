@@ -1,5 +1,5 @@
 query TarkovDevItems {
-  items(lang: ru) {
+  items(lang: ru, limit: 2000, offset: 0, types: [gun, mods]) {
     id
     bsgCategoryId
     categories {
@@ -9,32 +9,11 @@ query TarkovDevItems {
     }
     name
     shortName
-    basePrice
     normalizedName
-    backgroundColor
     types
-    width
-    height
     weight
-    avg24hPrice
     wikiLink
-    changeLast48h
-    changeLast48hPercent
-    low24hPrice
-    high24hPrice
-    lastLowPrice
     gridImageLink
-    iconLink
-    baseImageLink
-    image512pxLink
-    image8xLink
-    updated
-    sellFor {
-      ...ItemPriceFragment
-    }
-    buyFor {
-      ...ItemPriceFragment
-    }
     containsItems {
       count
       item {
@@ -52,117 +31,6 @@ query TarkovDevItems {
         fragmentationChance
         ammoType
       }
-      ... on ItemPropertiesArmor {
-        class
-        material {
-          id
-          name
-        }
-        zones
-        durability
-        ergoPenalty
-        speedPenalty
-        turnPenalty
-      }
-      ... on ItemPropertiesArmorAttachment {
-        class
-        material {
-          id
-          name
-        }
-        headZones
-        durability
-        ergoPenalty
-        speedPenalty
-        turnPenalty
-      }
-      ... on ItemPropertiesBackpack {
-        capacity
-        grids {
-          ...GridFragment
-        }
-        speedPenalty
-        turnPenalty
-        ergoPenalty
-      }
-      ... on ItemPropertiesBarrel {
-        ergonomics
-        recoilModifier
-        slots {
-          ...SlotFragment
-        }
-      }
-      ... on ItemPropertiesChestRig {
-        capacity
-        class
-        material {
-          id
-          name
-        }
-        zones
-        durability
-        ergoPenalty
-        speedPenalty
-        turnPenalty
-        grids {
-          ...GridFragment
-        }
-      }
-      ... on ItemPropertiesContainer {
-        capacity
-        grids {
-          ...GridFragment
-        }
-      }
-      ... on ItemPropertiesFoodDrink {
-        energy
-        hydration
-        units
-        stimEffects {
-          ...StimEffectFragment
-        }
-      }
-      ... on ItemPropertiesGlasses {
-        class
-        durability
-        blindnessProtection
-        material {
-          id
-          name
-        }
-      }
-      ... on ItemPropertiesGrenade {
-        type
-        fuse
-        maxExplosionDistance
-        fragments
-      }
-      ... on ItemPropertiesHeadphone {
-        ambientVolume
-        distortion
-        distanceModifier
-      }
-      ... on ItemPropertiesHelmet {
-        class
-        material {
-          id
-          name
-        }
-        headZones
-        durability
-        ergoPenalty
-        speedPenalty
-        turnPenalty
-        deafening
-        blocksHeadset
-        ricochetY
-        slots {
-          ...SlotFragment
-        }
-      }
-      ... on ItemPropertiesKey {
-        uses
-      }
       ... on ItemPropertiesMagazine {
         malfunctionChance
         ergonomics
@@ -170,27 +38,6 @@ query TarkovDevItems {
         capacity
         loadModifier
         ammoCheckModifier
-      }
-      ... on ItemPropertiesMedicalItem {
-        uses
-        useTime
-        cures
-      }
-      ... on ItemPropertiesMedKit {
-        hitpoints
-        useTime
-        maxHealPerUse
-        cures
-        hpCostLightBleeding
-        hpCostHeavyBleeding
-      }
-      ... on ItemPropertiesPainkiller {
-        uses
-        useTime
-        cures
-        painkillerDuration
-        energyImpact
-        hydrationImpact
       }
       ... on ItemPropertiesPreset {
         baseItem {
@@ -212,25 +59,6 @@ query TarkovDevItems {
       }
       ... on ItemPropertiesResource {
         units
-      }
-      ... on ItemPropertiesScope {
-        ergonomics
-        recoilModifier
-        zoomLevels
-      }
-      ... on ItemPropertiesStim {
-        cures
-        useTime
-        stimEffects {
-          ...StimEffectFragment
-        }
-      }
-      ... on ItemPropertiesSurgicalKit {
-        uses
-        useTime
-        cures
-        minLimbHealth
-        maxLimbHealth
       }
       ... on ItemPropertiesWeapon {
         caliber
@@ -298,38 +126,4 @@ fragment SlotFragment on ItemSlot {
       id
     }
   }
-}
-fragment ItemPriceFragment on ItemPrice {
-  vendor {
-    name
-    normalizedName
-    __typename
-    ... on TraderOffer {
-      trader {
-        id
-      }
-      minTraderLevel
-      taskUnlock {
-        id
-        tarkovDataId
-        name
-      }
-    }
-  }
-  price
-  currency
-  priceRUB
-  requirements {
-    type
-    value
-  }
-}
-fragment StimEffectFragment on StimEffect {
-  type
-  chance
-  delay
-  duration
-  value
-  percent
-  skillName
 }

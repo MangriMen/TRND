@@ -1,3 +1,5 @@
+import { HomePage } from '@/pages/home-page';
+
 export const AppRouter = () => {
-  return <div />;
+  return <HomePage />;
 };
