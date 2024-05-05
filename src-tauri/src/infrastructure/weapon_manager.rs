@@ -34,6 +34,20 @@ pub fn generate_mods(
         .map(|item| Slot {
             id: item.as_ref().unwrap().id.to_owned(),
             name: item.as_ref().unwrap().name.as_ref().unwrap().to_owned(),
+            icon_link: item
+                .as_ref()
+                .unwrap()
+                .icon_link
+                .as_ref()
+                .unwrap()
+                .to_owned(),
+            wiki_link: item
+                .as_ref()
+                .unwrap()
+                .wiki_link
+                .as_ref()
+                .unwrap()
+                .to_owned(),
         })
         .collect()
 }
@@ -63,10 +77,10 @@ pub fn generate_new_weapon(data: &tarkov_dev_items::ResponseData) -> Weapon {
         .unwrap(),
     );
 
-    // println!("{}", serde_json::to_string_pretty(&weapon).unwrap());
-
     Weapon {
         name: weapon.name.as_ref().unwrap().to_owned(),
+        icon_link: weapon.icon_link.as_ref().unwrap().to_owned(),
+        wiki_link: weapon.wiki_link.as_ref().unwrap().to_owned(),
         slots: mods,
     }
 }

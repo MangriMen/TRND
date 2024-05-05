@@ -1,19 +1,11 @@
 query TarkovDevItems {
-  items(lang: ru, limit: 2000, offset: 0, types: [gun, mods]) {
+  items(lang: ru, limit: 1000000, offset: 0, types: [gun, mods]) {
     id
-    bsgCategoryId
-    categories {
-      id
-      name
-      normalizedName
-    }
     name
-    shortName
-    normalizedName
     types
     weight
     wikiLink
-    gridImageLink
+    iconLink
     containsItems {
       count
       item {
@@ -22,15 +14,6 @@ query TarkovDevItems {
     }
     properties {
       __typename
-      ... on ItemPropertiesAmmo {
-        caliber
-        damage
-        projectileCount
-        penetrationPower
-        armorDamage
-        fragmentationChance
-        ammoType
-      }
       ... on ItemPropertiesMagazine {
         malfunctionChance
         ergonomics
@@ -56,9 +39,6 @@ query TarkovDevItems {
         ergonomics
         recoilVertical
         recoilHorizontal
-      }
-      ... on ItemPropertiesResource {
-        units
       }
       ... on ItemPropertiesWeapon {
         caliber
@@ -93,24 +73,7 @@ query TarkovDevItems {
     }
   }
 }
-fragment GridFragment on ItemStorageGrid {
-  width
-  height
-  filters {
-    allowedCategories {
-      id
-    }
-    allowedItems {
-      id
-    }
-    excludedCategories {
-      id
-    }
-    excludedItems {
-      id
-    }
-  }
-}
+
 fragment SlotFragment on ItemSlot {
   filters {
     allowedCategories {

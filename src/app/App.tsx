@@ -6,17 +6,22 @@ import {
   cookieStorageManager,
 } from '@kobalte/core';
 
-import { TarkovUpdateObserver } from '@/widgets/tarkov-update-observer';
+import { TarkovDataContextUpdateDialog } from '@/widgets/tarkov-update-observer';
 
-import { AppRouter } from '.';
+import { AppRouter, TarkovDataContextProvider } from '.';
 
 export const App = () => {
   return (
     <>
-      <ColorModeScript storageType={cookieStorageManager.type} />
+      <ColorModeScript
+        initialColorMode='dark'
+        storageType={cookieStorageManager.type}
+      />
       <ColorModeProvider storageManager={cookieStorageManager}>
-        <TarkovUpdateObserver />
-        <AppRouter />
+        <TarkovDataContextProvider>
+          <AppRouter />
+          <TarkovDataContextUpdateDialog />
+        </TarkovDataContextProvider>
       </ColorModeProvider>
     </>
   );
