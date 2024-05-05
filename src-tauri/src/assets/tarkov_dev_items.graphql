@@ -1,5 +1,5 @@
-query TarkovDevItems {
-  items(lang: ru, limit: 1000000, offset: 0, types: [gun, mods]) {
+query TarkovDevItems($lang: LanguageCode!) {
+  items(lang: $lang, limit: 1000000, offset: 0, types: [gun, mods]) {
     id
     name
     types

@@ -13,11 +13,13 @@
   "license": "MIT",
   "dependencies": {
     "@kobalte/core": "^0.12.6",
+    "@mbarzda/solid-i18next": "^1.4.1",
     "@solid-primitives/scheduled": "^1.4.3",
     "@tauri-apps/api": "^1",
     "class-variance-authority": "^0.7.0",
     "clsx": "^2.1.0",
     "graphql-request": "^6.1.0",
+    "i18next": "^23.11.3",
     "solid-icons": "^1.1.0",
     "solid-js": "^1.7.8",
     "tailwind-merge": "^2.2.2",

@@ -4,7 +4,10 @@ use crate::{
     infrastructure::api::tarkov_api::run_tarkov_query,
     models::{
         progress::Progress,
-        tarkov::{tarkov_dev_items, TarkovDevItems},
+        tarkov::{
+            tarkov_dev_items::{self},
+            TarkovDevItems,
+        },
     },
     utilities::tauri::get_app_dir,
 };
@@ -12,10 +15,15 @@ use graphql_client::GraphQLQuery;
 use tauri::Manager;
 
 #[tauri::command]
-pub async fn update_data(app_handle: tauri::AppHandle) {
+pub async fn update_data(app_handle: tauri::AppHandle, language: String) {
     let app_dir = get_app_dir(&app_handle);
 
-    let variables = tarkov_dev_items::Variables;
+    let lang = match language.as_str() {
+        "ru" => tarkov_dev_items::LanguageCode::ru,
+        "en" | _ => tarkov_dev_items::LanguageCode::en,
+    };
+
+    let variables = tarkov_dev_items::Variables { lang };
 
     let request_body = TarkovDevItems::build_query(variables);
 

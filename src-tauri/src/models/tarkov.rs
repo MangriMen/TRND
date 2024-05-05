@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(GraphQLQuery)]
 #[graphql(
     query_path = "src/assets/tarkov_dev_items.graphql",
-    schema_path = "src/assets/tarkov_query.json",
+    schema_path = "src/assets/tarkov_schema.json",
     response_derives = "Serialize,Deserialize,PartialEq"
 )]
 pub struct TarkovDevItems;

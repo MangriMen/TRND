@@ -1,3 +1,4 @@
+import i18next from 'i18next';
 import { Component, JSX, createComputed, createSignal } from 'solid-js';
 
 import {
@@ -25,7 +26,8 @@ export const TarkovDataContextProvider: Component<{
   };
 
   const updateData = () => {
-    updateTarkovData();
+    console.log(i18next.language);
+    updateTarkovData(i18next.language as 'ru' | 'en');
     listenProgress((event) => updateProgress(event.payload));
   };
 

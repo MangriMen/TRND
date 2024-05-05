@@ -6,7 +6,7 @@ export type TarkovDataContextProps = [
   Accessor<TarkovDownloadProgress>,
   Accessor<number>,
   {
-    updateData: () => void;
+    updateData: (lang: 'en' | 'ru') => void;
   },
 ];
 

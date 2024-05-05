@@ -5,6 +5,7 @@ import {
   ColorModeScript,
   cookieStorageManager,
 } from '@kobalte/core';
+import { TransProvider } from '@mbarzda/solid-i18next';
 
 import { TarkovDataContextUpdateDialog } from '@/widgets/tarkov-update-observer';
 
@@ -18,10 +19,29 @@ export const App = () => {
         storageType={cookieStorageManager.type}
       />
       <ColorModeProvider storageManager={cookieStorageManager}>
-        <TarkovDataContextProvider>
-          <AppRouter />
-          <TarkovDataContextUpdateDialog />
-        </TarkovDataContextProvider>
+        <TransProvider
+          lng='en'
+          options={{
+            debug: true,
+            interpolation: {
+              escapeValue: true,
+            },
+            fallbackLng: 'en',
+            resources: {
+              en: {
+                translation: {},
+              },
+              ru: {
+                translation: {},
+              },
+            },
+          }}
+        >
+          <TarkovDataContextProvider>
+            <AppRouter />
+            <TarkovDataContextUpdateDialog />
+          </TarkovDataContextProvider>
+        </TransProvider>
       </ColorModeProvider>
     </>
   );
