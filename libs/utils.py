@@ -1,15 +1,24 @@
 import datetime
+import inspect
 import json
+import logging
 import os
 import re
+import sys
+import tempfile
 import threading
+from pathlib import Path
 
 import requests
 
+from libs import consts
 
-def load_data():
+
+def load_data(filePath=None):
+    if filePath is None:
+        filePath = os.environ.get('DATA_FILE_PATH')
     try:
-        with open(os.environ.get('DATAFILE'), 'r', encoding='utf-8') as fileIn:
+        with open(filePath, 'r', encoding='utf-8') as fileIn:
             try:
                 json_ = json.load(fileIn)
             except json.decoder.JSONDecodeError:
@@ -20,12 +29,17 @@ def load_data():
         return json_
 
 
-def dump_data(dict_):
-    with open(os.environ.get('DATAFILE'), 'w', encoding='utf-8') as fileOut:
-        json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
-        
+def dump_data(dict_, filePath=None):
+    if filePath is None:
+        filePath = os.environ.get('DATA_FILE_PATH')
+    try:
+        with open(filePath, 'w', encoding='utf-8') as fileOut:
+            json.dump(dict_, fileOut, indent=2, ensure_ascii=False)
+    except (FileNotFoundError, PermissionError) as err:
+        raise err
 
-def get_json_dump(dict_):
+
+def get_json_dumps(dict_):
     return json.dumps(dict_, indent=2, ensure_ascii=False) if isinstance(dict_, dict) else None
 
 
@@ -97,15 +111,65 @@ def get_update_info(githubLinkLatestRelease):
 def validate_data(jsonData):
     if jsonData is None:
         jsonData = dict()
-    if 'weaponsLastUpdate' not in jsonData:
-        jsonData['weaponsLastUpdate'] = 'unknown'
-    if 'modsLastUpdate' not in jsonData:
-        jsonData['modsLastUpdate'] = 'unknown'
-    if 'weapons' not in jsonData:
-        jsonData['weapons'] = dict()
-    if 'mods' not in jsonData:
-        jsonData['mods'] = dict()
-    if 'modsConflicts' not in jsonData:
-        jsonData['modsConflicts'] = dict()
+    if consts.DATA_WEAPONS_LAST_UPDATE_KEY not in jsonData:
+        jsonData[consts.DATA_WEAPONS_LAST_UPDATE_KEY] = 'unknown'
+    if consts.DATA_MODS_LAST_UPDATE_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_LAST_UPDATE_KEY] = 'unknown'
+    if consts.DATA_WEAPONS_KEY not in jsonData:
+        jsonData[consts.DATA_WEAPONS_KEY] = dict()
+    if consts.DATA_MODS_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_KEY] = dict()
+    if consts.DATA_MODS_CONFLICTS_KEY not in jsonData:
+        jsonData[consts.DATA_MODS_CONFLICTS_KEY] = dict()
 
     return jsonData
+
+
+def clear_dir(directoryPath):
+    directory = Path(directoryPath)
+    for item in directory.iterdir():
+        if item.is_dir():
+            clear_dir(item)
+        else:
+            item.unlink()
+
+
+def create_logger(name, level=logging.INFO,
+                  *, dateFormat='%Y-%m-%d_%H-%M-%S', folderPath=None, loggerFormat=None, maxCount=50, extension='.log'):
+    logger = logging.getLogger(name)
+    logger.setLevel(level)
+
+    folderPath = os.path.abspath(folderPath if folderPath is not None else os.path.join(tempfile.tempdir, __name__))
+    fileName = ''.join([datetime.datetime.now().strftime(dateFormat), extension])
+    filePath = os.path.join(folderPath, fileName)
+
+    formatter = logging.Formatter(loggerFormat) if loggerFormat is not None else None
+
+    handlers = dict()
+    error = ''
+
+    try:
+        if len((fileList := os.listdir(folderPath))) > maxCount:
+            os.remove(os.path.join(folderPath, fileList[0]))
+
+        handlers['fileHandler'] = logging.FileHandler(filePath)
+    except WindowsError as error:
+        handlers['fileHandler'] = None
+        handlers['streamHandler'] = logging.StreamHandler(sys.stdout)
+
+    for handlerName, handler in handlers.items():
+        if handler is not None:
+            if formatter is not None:
+                handler.setFormatter(formatter)
+            logger.addHandler(handler)
+
+    if error:
+        logger.error(error)
+
+    logger.info(''.join(['Logger initialized to ', 'stdout' if handlers['fileHandler'] is None else 'file handler']))
+
+
+def get_logger_for_module():
+    frm = inspect.stack()[1]
+    mod = inspect.getmodule(frm[0])
+    return logging.getLogger(''.join([consts.PROGRAM_NAME, '.', mod.__name__]))
