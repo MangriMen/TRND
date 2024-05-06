@@ -1,0 +1,92 @@
+query TarkovDevItems($lang: LanguageCode!) {
+  items(lang: $lang, limit: 1000000, offset: 0, types: [gun, mods]) {
+    id
+    name
+    types
+    weight
+    wikiLink
+    iconLink
+    containsItems {
+      count
+      item {
+        id
+      }
+    }
+    properties {
+      __typename
+      ... on ItemPropertiesMagazine {
+        malfunctionChance
+        ergonomics
+        recoilModifier
+        capacity
+        loadModifier
+        ammoCheckModifier
+      }
+      ... on ItemPropertiesPreset {
+        baseItem {
+          id
+          name
+          normalizedName
+          properties {
+            __typename
+            ... on ItemPropertiesWeapon {
+              defaultPreset {
+                id
+              }
+            }
+          }
+        }
+        ergonomics
+        recoilVertical
+        recoilHorizontal
+      }
+      ... on ItemPropertiesWeapon {
+        caliber
+        effectiveDistance
+        ergonomics
+        fireModes
+        fireRate
+        recoilVertical
+        recoilHorizontal
+        sightingRange
+        recoilAngle
+        recoilDispersion
+        convergence
+        cameraRecoil
+        slots {
+          ...SlotFragment
+        }
+        defaultPreset {
+          id
+        }
+        presets {
+          id
+        }
+      }
+      ... on ItemPropertiesWeaponMod {
+        ergonomics
+        recoilModifier
+        slots {
+          ...SlotFragment
+        }
+      }
+    }
+  }
+}
+
+fragment SlotFragment on ItemSlot {
+  filters {
+    allowedCategories {
+      id
+    }
+    allowedItems {
+      id
+    }
+    excludedCategories {
+      id
+    }
+    excludedItems {
+      id
+    }
+  }
+}
